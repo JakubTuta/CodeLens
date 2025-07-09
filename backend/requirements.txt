@@ -1,0 +1,4 @@
+fastapi[standard]==0.115.6
+pydantic==2.10.4
+python-dotenv==1.0.1
+motor==3.6.0
