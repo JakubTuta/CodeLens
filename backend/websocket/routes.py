@@ -40,7 +40,6 @@ def sum_func(a: int, b: int) -> int:
                 """
 
                 async def generate_and_send_unit_tests():
-                    """Generate and send unit tests independently."""
                     try:
                         unit_test_generator = create_tests.UnitTest()
                         unit_tests = await unit_test_generator.get_tests_async(code)
@@ -59,7 +58,6 @@ def sum_func(a: int, b: int) -> int:
                         )
 
                 async def generate_and_send_memory_tests():
-                    """Generate and send memory tests independently."""
                     try:
                         memory_test_generator = create_tests.MemoryTest()
                         memory_tests = await memory_test_generator.get_tests_async(code)
@@ -78,7 +76,6 @@ def sum_func(a: int, b: int) -> int:
                         )
 
                 async def generate_and_send_performance_tests():
-                    """Generate and send performance tests independently."""
                     try:
                         performance_test_generator = create_tests.PerformanceTest()
                         performance_tests = (

@@ -16,8 +16,6 @@ SIMPLE_TYPE_STRATEGIES = {
 
 
 def type_to_strategy(type_hint: typing.Any) -> hypothesis.strategies.SearchStrategy:
-    """Converts a Python type hint to a Hypothesis strategy."""
-
     if type_hint in SIMPLE_TYPE_STRATEGIES:
         return SIMPLE_TYPE_STRATEGIES[type_hint]
 
@@ -75,8 +73,6 @@ def type_to_strategy(type_hint: typing.Any) -> hypothesis.strategies.SearchStrat
 
 
 def strategy_to_string(strategy: hypothesis.strategies.SearchStrategy) -> str:
-    """Converts a Hypothesis strategy to its string representation for code generation."""
-
     strategy_repr = repr(strategy)
     if "integers" in strategy_repr:
         return "st.integers()"
@@ -108,7 +104,6 @@ def strategy_to_string(strategy: hypothesis.strategies.SearchStrategy) -> str:
 def extract_function_from_string(
     function_code: str,
 ) -> typing.Tuple[typing.Optional[typing.Callable], str]:
-    """Executes a string containing a Python function and returns the function object and its name."""
     exec_globals = {}
     try:
         exec(function_code, exec_globals)
@@ -126,7 +121,6 @@ def extract_function_from_string(
 def analyze_function_signature(
     func: typing.Callable, remove_none: bool = False
 ) -> dict:
-    """Analyzes a function's signature and returns information about its parameters and return type."""
     sig = inspect.signature(func)
     type_hints = typing.get_type_hints(func)
 
@@ -153,7 +147,6 @@ def analyze_function_signature(
 
 
 def is_standard_python_type(type_hint: typing.Any) -> bool:
-    """Checks if a type hint corresponds to a standard Python type that we can generate strategies for."""
     if type_hint is None:
         return False
     if type_hint in SIMPLE_TYPE_STRATEGIES:
@@ -173,7 +166,6 @@ def is_standard_python_type(type_hint: typing.Any) -> bool:
 
 
 def filter_standard_parameters(sig_info: dict) -> dict:
-    """Filters the parameters of a function to include only those with standard Python types."""
     filtered_params = {
         name: info
         for name, info in sig_info["parameters"].items()
@@ -183,7 +175,6 @@ def filter_standard_parameters(sig_info: dict) -> dict:
 
 
 def indent_code(code: str, spaces: int) -> str:
-    """Indents a block of code by a given number of spaces."""
     indent = " " * spaces
     return "\n".join(
         indent + line if line.strip() else line for line in code.split("\n")

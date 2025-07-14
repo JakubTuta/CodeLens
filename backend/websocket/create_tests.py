@@ -2,7 +2,9 @@ import asyncio
 import typing
 from typing import Literal
 
-from . import models, test_utils
+from helpers import test_utils
+
+from . import models
 
 
 class BaseTestGenerator:
@@ -49,8 +51,6 @@ class BaseTestGenerator:
 
 
 class UnitTest(BaseTestGenerator):
-    """Generates unit tests for a given function."""
-
     async def get_tests_async(self, function: str) -> typing.List[models.Test]:
         test_generators = [
             HypothesisTestGenerator(),
