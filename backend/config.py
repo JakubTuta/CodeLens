@@ -1,3 +1,4 @@
+from functools import lru_cache
 import pydantic_settings
 
 
@@ -6,9 +7,10 @@ class Settings(pydantic_settings.BaseSettings):
         env_file=".env", env_file_encoding="utf-8"
     )
 
-    # Add your settings here, for example:
-    # PROJECT_NAME: str = "My WebSocket App"
-    # MONGO_DB_URL: str
+    PROJECT_NAME: str = "My WebSocket App"
+    ANTHROPIC_API_KEY: str = ""
 
 
-settings = Settings()
+@lru_cache
+def get_settings():
+    return Settings()

@@ -58,7 +58,7 @@ def get_client(
 
 
 def send_request(
-    model: str,
+    model: typing.Literal["claude", "gemini"],
     api_key: str,
     user_query: str,
     system_instructions: typing.Optional[str] = None,

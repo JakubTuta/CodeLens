@@ -50,3 +50,6 @@ class ResponseMessage(pydantic.BaseModel):
     unit_tests: typing.Optional[typing.List[Test]] = None
     memory_tests: typing.Optional[typing.List[Test]] = None
     performance_tests: typing.Optional[typing.List[Test]] = None
+
+    # Documentation
+    docs: typing.Optional[str] = None
