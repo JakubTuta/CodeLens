@@ -1,13 +1,13 @@
 import asyncio
 import typing
 
-from helpers import ai
+from helpers import ai, function_utils
 
 
 class Documentation:
     @staticmethod
     def generate_documentation_from_ai(
-        function_string: str, api_key: str
+        function: typing.Callable, api_key: str
     ) -> typing.Optional[str]:
         template = """
         You are an expert in Python programming. Your task is to generate documentation for the provided function. Please provide the documentation in a clear and concise manner. ONLY return the function with documentation inside it, DO NOT change the code in any way and DO NOT write additional comments.
@@ -32,6 +32,7 @@ class Documentation:
             return True
         ```
         """
+        function_string = function_utils.function_to_text(function)
         response = ai.send_request(
             model="claude",
             api_key=api_key,
@@ -55,7 +56,7 @@ class Documentation:
             return joined_text
 
     async def get_docs_async(
-        self, function_string: str, api_key: str
+        self, function: typing.Callable, api_key: str
     ) -> typing.Optional[str]:
         result = None
         exception = None
@@ -63,7 +64,7 @@ class Documentation:
         def worker():
             nonlocal result, exception
             try:
-                result = self.generate_documentation_from_ai(function_string, api_key)
+                result = self.generate_documentation_from_ai(function, api_key)
             except Exception as e:
                 exception = e
 

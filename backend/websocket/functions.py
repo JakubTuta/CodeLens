@@ -35,7 +35,7 @@ def prepare_response_message(
     )
 
 
-async def prepare_and_send_response_message(
+async def send_response_message(
     websocket: typing.Any, response_message: models.ResponseMessage
 ) -> None:
     await websocket.send_json(response_message.model_dump())

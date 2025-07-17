@@ -1,8 +1,8 @@
 import asyncio
 import typing
-from typing import Literal
+from typing import Callable, Literal
 
-from helpers import test_utils
+from helpers import function_utils, test_utils
 
 from . import models
 
@@ -10,21 +10,26 @@ from . import models
 class BaseTestGenerator:
     test_type: Literal["unit", "memory", "performance"] = "unit"
     test_name: str = "base"
-    test_name: str = "base"
 
-    async def get_tests_async(self, function: str) -> typing.List[models.Test]:
+    async def get_tests_async(
+        self, function: typing.Callable
+    ) -> typing.List[models.Test]:
         result = []
         exception = None
 
         def worker():
             nonlocal result, exception
             try:
-                func_obj, func_name = test_utils.extract_function_from_string(function)
-                if not func_obj:
+                func_name = function_utils.get_function_name(function)
+
+                if not function or not func_name:
                     return
 
-                sig_info = test_utils.analyze_function_signature(func_obj)
-                test_code = self._generate_test(func_name, function, sig_info)
+                function_string = function_utils.function_to_text(function)
+                sig_info = test_utils.analyze_function_signature(function)
+                test_code = self._generate_test(
+                    func_name, function, function_string, sig_info
+                )
 
                 if test_code:
                     result.append(
@@ -46,12 +51,20 @@ class BaseTestGenerator:
 
         return result
 
-    def _generate_test(self, func_name: str, function_code: str, sig_info: dict) -> str:
+    def _generate_test(
+        self,
+        func_name: str,
+        function: Callable,
+        function_code: str,
+        sig_info: dict,
+    ) -> str:
         raise NotImplementedError
 
 
 class UnitTest(BaseTestGenerator):
-    async def get_tests_async(self, function: str) -> typing.List[models.Test]:
+    async def get_tests_async(
+        self, function: typing.Callable
+    ) -> typing.List[models.Test]:
         test_generators = [
             HypothesisTestGenerator(),
             EdgeCaseTestGenerator(),
@@ -71,7 +84,13 @@ class HypothesisTestGenerator(BaseTestGenerator):
     test_type = "unit"
     test_name = "hypothesis"
 
-    def _generate_test(self, func_name: str, function_code: str, sig_info: dict) -> str:
+    def _generate_test(
+        self,
+        func_name: str,
+        function: Callable,
+        function_code: str,
+        sig_info: dict,
+    ) -> str:
         filtered_sig_info = test_utils.filter_standard_parameters(sig_info)
         if not filtered_sig_info["parameters"]:
             return ""
@@ -136,7 +155,13 @@ class EdgeCaseTestGenerator(BaseTestGenerator):
         set: [("empty set", "set()"), ("single item set", "{1}")],
     }
 
-    def _generate_test(self, func_name: str, function_code: str, sig_info: dict) -> str:
+    def _generate_test(
+        self,
+        func_name: str,
+        function: Callable,
+        function_code: str,
+        sig_info: dict,
+    ) -> str:
         filtered_sig_info = test_utils.filter_standard_parameters(sig_info)
         if not filtered_sig_info["parameters"]:
             return ""
@@ -173,7 +198,13 @@ class PropertyTestGenerator(BaseTestGenerator):
     test_type = "unit"
     test_name = "properties"
 
-    def _generate_test(self, func_name: str, function_code: str, sig_info: dict) -> str:
+    def _generate_test(
+        self,
+        func_name: str,
+        function: Callable,
+        function_code: str,
+        sig_info: dict,
+    ) -> str:
         filtered_sig_info = test_utils.filter_standard_parameters(sig_info)
         if not filtered_sig_info["parameters"]:
             return ""
@@ -218,7 +249,13 @@ class TypeConsistencyTestGenerator(BaseTestGenerator):
     test_type = "unit"
     test_name = "type_consistency"
 
-    def _generate_test(self, func_name: str, function_code: str, sig_info: dict) -> str:
+    def _generate_test(
+        self,
+        func_name: str,
+        function: Callable,
+        function_code: str,
+        sig_info: dict,
+    ) -> str:
         filtered_sig_info = test_utils.filter_standard_parameters(sig_info)
         if not filtered_sig_info["parameters"] or sig_info["return_type"] == typing.Any:
             return ""
@@ -261,7 +298,13 @@ class DeterministicTestGenerator(BaseTestGenerator):
     test_type = "unit"
     test_name = "deterministic"
 
-    def _generate_test(self, func_name: str, function_code: str, sig_info: dict) -> str:
+    def _generate_test(
+        self,
+        func_name: str,
+        function: Callable,
+        function_code: str,
+        sig_info: dict,
+    ) -> str:
         filtered_sig_info = test_utils.filter_standard_parameters(sig_info)
         if not filtered_sig_info["parameters"]:
             return ""
@@ -302,7 +345,13 @@ class MathematicalPropertyTestGenerator(BaseTestGenerator):
     test_type = "unit"
     test_name = "mathematical_properties"
 
-    def _generate_test(self, func_name: str, function_code: str, sig_info: dict) -> str:
+    def _generate_test(
+        self,
+        func_name: str,
+        function: Callable,
+        function_code: str,
+        sig_info: dict,
+    ) -> str:
         filtered_sig_info = test_utils.filter_standard_parameters(sig_info)
         numeric_params = [
             (name, info)
@@ -353,10 +402,18 @@ class MemoryTest(BaseTestGenerator):
     test_type = "memory"
     test_name = "memory_usage"
 
-    async def get_tests_async(self, function: str) -> typing.List[models.Test]:
+    async def get_tests_async(
+        self, function: typing.Callable
+    ) -> typing.List[models.Test]:
         return await super().get_tests_async(function)
 
-    def _generate_test(self, func_name: str, function_code: str, sig_info: dict):
+    def _generate_test(
+        self,
+        func_name: str,
+        function: Callable,
+        function_code: str,
+        sig_info: dict,
+    ):
         filtered_sig_info = test_utils.filter_standard_parameters(sig_info)
 
         imports = ["import tracemalloc"]
@@ -412,10 +469,18 @@ class PerformanceTest(BaseTestGenerator):
     test_type = "performance"
     test_name = "performance"
 
-    async def get_tests_async(self, function: str) -> typing.List[models.Test]:
+    async def get_tests_async(
+        self, function: typing.Callable
+    ) -> typing.List[models.Test]:
         return await super().get_tests_async(function)
 
-    def _generate_test(self, func_name: str, function_code: str, sig_info: dict) -> str:
+    def _generate_test(
+        self,
+        func_name: str,
+        function: Callable,
+        function_code: str,
+        sig_info: dict,
+    ) -> str:
         filtered_sig_info = test_utils.filter_standard_parameters(sig_info)
 
         imports = ["import time"]

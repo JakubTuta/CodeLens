@@ -101,23 +101,6 @@ def strategy_to_string(strategy: hypothesis.strategies.SearchStrategy) -> str:
     return "st.text()"
 
 
-def extract_function_from_string(
-    function_code: str,
-) -> typing.Tuple[typing.Optional[typing.Callable], str]:
-    exec_globals = {}
-    try:
-        exec(function_code, exec_globals)
-    except Exception as e:
-        print(f"Error executing function code: {e}")
-        return None, "unknown_function"
-
-    for name, obj in exec_globals.items():
-        if callable(obj) and not name.startswith("_"):
-            return obj, name
-
-    return None, "unknown_function"
-
-
 def analyze_function_signature(
     func: typing.Callable, remove_none: bool = False
 ) -> dict:

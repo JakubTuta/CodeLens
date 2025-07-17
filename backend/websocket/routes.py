@@ -3,6 +3,7 @@ import json
 
 import config
 import fastapi
+from helpers import function_utils
 
 from . import (
     connection_manager,
@@ -29,7 +30,16 @@ async def websocket_endpoint(
     try:
         while True:
             data = await websocket.receive_text()
-            message = json.loads(data)
+
+            try:
+                message = json.loads(data)
+            except json.JSONDecodeError:
+                response_message = functions.prepare_response_message(
+                    type="error",
+                    error_message="Invalid JSON format.",
+                )
+                await functions.send_response_message(websocket, response_message)
+                continue
 
             if (
                 validated_message := functions.validate_request_message(message)
@@ -38,30 +48,33 @@ async def websocket_endpoint(
                     type="error",
                     error_message="Invalid message format.",
                 )
-                await functions.prepare_and_send_response_message(
-                    websocket, response_message
-                )
+                await functions.send_response_message(websocket, response_message)
                 continue
 
             if validated_message.type == "send_code":
-                # code = validated_message.code
-                code = """
-def sum_func(a: int, b: int) -> int:
-    return a + b
-                """
+                code = validated_message.code
+
+                try:
+                    valid_function = function_utils.text_to_function(code)
+                except ValueError as e:
+                    response_message = functions.prepare_response_message(
+                        type="error",
+                        error_message=f"Error validating function: {str(e)}",
+                    )
+                    await functions.send_response_message(websocket, response_message)
+                    continue
 
                 async def generate_and_send_docs():
                     try:
                         docs_generator = create_docs.Documentation()
-                        print(settings.ANTHROPIC_API_KEY)
                         docs = await docs_generator.get_docs_async(
-                            code, api_key=settings.ANTHROPIC_API_KEY
+                            valid_function, api_key=settings.ANTHROPIC_API_KEY
                         )
 
                         response_message = functions.prepare_response_message(
                             type="return_docs", docs=docs
                         )
-                        await functions.prepare_and_send_response_message(
+                        await functions.send_response_message(
                             websocket, response_message
                         )
 
@@ -71,20 +84,22 @@ def sum_func(a: int, b: int) -> int:
                             type="error",
                             error_message=f"Failed to generate docs: {str(e)}",
                         )
-                        await functions.prepare_and_send_response_message(
+                        await functions.send_response_message(
                             websocket, response_message
                         )
 
                 async def generate_and_send_unit_tests():
                     try:
                         unit_test_generator = create_tests.UnitTest()
-                        unit_tests = await unit_test_generator.get_tests_async(code)
+                        unit_tests = await unit_test_generator.get_tests_async(
+                            valid_function
+                        )
 
                         response_message = functions.prepare_response_message(
                             type="return_unit_tests",
                             unit_tests=unit_tests,
                         )
-                        await functions.prepare_and_send_response_message(
+                        await functions.send_response_message(
                             websocket, response_message
                         )
 
@@ -94,20 +109,22 @@ def sum_func(a: int, b: int) -> int:
                             type="error",
                             error_message=f"Failed to generate unit tests: {str(e)}",
                         )
-                        await functions.prepare_and_send_response_message(
+                        await functions.send_response_message(
                             websocket, response_message
                         )
 
                 async def generate_and_send_memory_tests():
                     try:
                         memory_test_generator = create_tests.MemoryTest()
-                        memory_tests = await memory_test_generator.get_tests_async(code)
+                        memory_tests = await memory_test_generator.get_tests_async(
+                            valid_function
+                        )
 
                         response_message = functions.prepare_response_message(
                             type="return_memory_tests",
                             memory_tests=memory_tests,
                         )
-                        await functions.prepare_and_send_response_message(
+                        await functions.send_response_message(
                             websocket, response_message
                         )
 
@@ -117,7 +134,7 @@ def sum_func(a: int, b: int) -> int:
                             type="error",
                             error_message=f"Failed to generate memory tests: {str(e)}",
                         )
-                        await functions.prepare_and_send_response_message(
+                        await functions.send_response_message(
                             websocket, response_message
                         )
 
@@ -125,14 +142,16 @@ def sum_func(a: int, b: int) -> int:
                     try:
                         performance_test_generator = create_tests.PerformanceTest()
                         performance_tests = (
-                            await performance_test_generator.get_tests_async(code)
+                            await performance_test_generator.get_tests_async(
+                                valid_function
+                            )
                         )
 
                         response_message = functions.prepare_response_message(
                             type="return_performance_tests",
                             performance_tests=performance_tests,
                         )
-                        await functions.prepare_and_send_response_message(
+                        await functions.send_response_message(
                             websocket, response_message
                         )
 
@@ -142,7 +161,7 @@ def sum_func(a: int, b: int) -> int:
                             type="error",
                             error_message=f"Failed to generate performance tests: {str(e)}",
                         )
-                        await functions.prepare_and_send_response_message(
+                        await functions.send_response_message(
                             websocket, response_message
                         )
 
