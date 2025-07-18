@@ -128,3 +128,23 @@ def get_text_from_response(
     elif isinstance(response, anthropic.types.Message):
         if response.content:
             return response.content[0].text  # type: ignore
+
+
+def test_bot_connection(
+    model: typing.Literal["claude", "gemini"], api_key: str
+) -> bool:
+    try:
+        client = get_client(model, api_key)
+
+        if not client:
+            return False
+
+        if isinstance(client, anthropic.Anthropic):
+            client.models.list(limit=1)
+        elif isinstance(client, genai.Client):
+            client.models.list()
+
+        return True
+
+    except Exception:
+        return False

@@ -24,6 +24,9 @@ def prepare_response_message(
     memory_tests: typing.Optional[typing.List[models.Test]] = None,
     performance_tests: typing.Optional[typing.List[models.Test]] = None,
     docs: typing.Optional[str] = None,
+    improvements: typing.Optional[typing.List[str]] = None,
+    ai_model: typing.Optional[str] = None,
+    ai_api_key_status: typing.Optional[str] = None,
 ) -> models.ResponseMessage:
     return models.ResponseMessage(
         type=type,
@@ -32,6 +35,7 @@ def prepare_response_message(
         memory_tests=memory_tests,
         performance_tests=performance_tests,
         docs=docs,
+        improvements=improvements,
     )
 
 

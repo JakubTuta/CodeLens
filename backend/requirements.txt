@@ -6,3 +6,5 @@ hypothesis
 pydantic_settings
 google-genai
 anthropic
+langchain
+langchain-core

@@ -2,6 +2,8 @@ import ast
 import inspect
 import typing
 
+import fastapi
+
 
 def validate_single_function(function_text: str) -> bool:
     try:
@@ -74,3 +76,14 @@ def get_function_name(func: typing.Callable) -> str:
         return func.__name__
     else:
         raise ValueError("Function does not have a name attribute")
+
+
+def get_bot_information(websocket: fastapi.WebSocket):
+    cookies = websocket.cookies
+    ai_model = cookies.get("aiModel", None)
+    ai_api_key = cookies.get("aiApiKey", None)
+
+    if not ai_model or not ai_api_key:
+        raise Exception("AI model or API key not provided in cookies.")
+
+    return ai_model, ai_api_key

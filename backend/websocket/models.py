@@ -10,11 +10,13 @@ response_message_types = typing.Literal[
     "return_docs",
     "return_improvements",
     "test_generation_started",
+    "ai_test_result",
 ]
 
 message_types = {
     "request": {
         "send_code",
+        "test_ai",
     },
     "response": {
         "error",
@@ -24,14 +26,15 @@ message_types = {
         "return_docs",
         "return_improvements",
         "test_generation_started",
+        "ai_test_result",
     },
 }
 
 
 class RequestMessage(pydantic.BaseModel):
-    type: typing.Literal["send_code"]
-    code: str
-    language: typing.Literal["python"]
+    type: typing.Literal["send_code", "test_ai"]
+    code: typing.Optional[str] = None
+    language: typing.Optional[typing.Literal["python"]] = None
 
 
 class Test(pydantic.BaseModel):
@@ -53,3 +56,9 @@ class ResponseMessage(pydantic.BaseModel):
 
     # Documentation
     docs: typing.Optional[str] = None
+
+    # Improvements
+    improvements: typing.Optional[typing.List[str]] = None
+
+    # Improvements
+    improvements: typing.Optional[typing.List[str]] = None

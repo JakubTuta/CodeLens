@@ -27,9 +27,7 @@ class BaseTestGenerator:
 
                 function_string = function_utils.function_to_text(function)
                 sig_info = test_utils.analyze_function_signature(function)
-                test_code = self._generate_test(
-                    func_name, function, function_string, sig_info
-                )
+                test_code = self._generate_test(func_name, function_string, sig_info)
 
                 if test_code:
                     result.append(
@@ -54,7 +52,6 @@ class BaseTestGenerator:
     def _generate_test(
         self,
         func_name: str,
-        function: Callable,
         function_code: str,
         sig_info: dict,
     ) -> str:
@@ -87,7 +84,6 @@ class HypothesisTestGenerator(BaseTestGenerator):
     def _generate_test(
         self,
         func_name: str,
-        function: Callable,
         function_code: str,
         sig_info: dict,
     ) -> str:
@@ -158,7 +154,6 @@ class EdgeCaseTestGenerator(BaseTestGenerator):
     def _generate_test(
         self,
         func_name: str,
-        function: Callable,
         function_code: str,
         sig_info: dict,
     ) -> str:
@@ -167,7 +162,7 @@ class EdgeCaseTestGenerator(BaseTestGenerator):
             return ""
 
         test_cases = []
-        for param_name, param_info in filtered_sig_info["parameters"].items():
+        for _, param_info in filtered_sig_info["parameters"].items():
             param_type = param_info["type"]
             origin_type = getattr(param_type, "__origin__", param_type)
 
@@ -201,7 +196,6 @@ class PropertyTestGenerator(BaseTestGenerator):
     def _generate_test(
         self,
         func_name: str,
-        function: Callable,
         function_code: str,
         sig_info: dict,
     ) -> str:
@@ -252,7 +246,6 @@ class TypeConsistencyTestGenerator(BaseTestGenerator):
     def _generate_test(
         self,
         func_name: str,
-        function: Callable,
         function_code: str,
         sig_info: dict,
     ) -> str:
@@ -301,7 +294,6 @@ class DeterministicTestGenerator(BaseTestGenerator):
     def _generate_test(
         self,
         func_name: str,
-        function: Callable,
         function_code: str,
         sig_info: dict,
     ) -> str:
@@ -348,7 +340,6 @@ class MathematicalPropertyTestGenerator(BaseTestGenerator):
     def _generate_test(
         self,
         func_name: str,
-        function: Callable,
         function_code: str,
         sig_info: dict,
     ) -> str:
@@ -369,8 +360,8 @@ class MathematicalPropertyTestGenerator(BaseTestGenerator):
         ]
 
         if len(numeric_params) == 2:
-            param1_name, param1_info = numeric_params[0]
-            param2_name, param2_info = numeric_params[1]
+            _, param1_info = numeric_params[0]
+            _, param2_info = numeric_params[1]
 
             strategy1 = test_utils.strategy_to_string(
                 test_utils.type_to_strategy(param1_info["type"])
@@ -410,7 +401,6 @@ class MemoryTest(BaseTestGenerator):
     def _generate_test(
         self,
         func_name: str,
-        function: Callable,
         function_code: str,
         sig_info: dict,
     ):
@@ -419,7 +409,6 @@ class MemoryTest(BaseTestGenerator):
         imports = ["import tracemalloc"]
 
         sample_params = []
-        param_names = []
         for param_name, param_info in filtered_sig_info["parameters"].items():
             param_type = param_info["type"]
             if param_type == int:
@@ -444,7 +433,6 @@ class MemoryTest(BaseTestGenerator):
                 sample_params.append(f"{param_name}={{1, 2, 3}}")
             else:
                 sample_params.append(f"{param_name}=None")
-            param_names.append(param_name)
 
         return "\n".join(
             imports
@@ -477,7 +465,6 @@ class PerformanceTest(BaseTestGenerator):
     def _generate_test(
         self,
         func_name: str,
-        function: Callable,
         function_code: str,
         sig_info: dict,
     ) -> str:
@@ -491,7 +478,7 @@ class PerformanceTest(BaseTestGenerator):
             if param_type == int:
                 sample_params.append(f"{param_name}=100")
             elif param_type == float:
-                sample_params.append(f"{param_name}=1.5")
+                sample_params.append(f"{param_name}=0.5")
             elif param_type == str:
                 sample_params.append(f"{param_name}='test_string'")
             elif param_type == bool:

@@ -10,7 +10,7 @@ class Documentation:
         function: typing.Callable, api_key: str
     ) -> typing.Optional[str]:
         template = """
-        You are an expert in Python programming. Your task is to generate documentation for the provided function. Please provide the documentation in a clear and concise manner. ONLY return the function with documentation inside it, DO NOT change the code in any way and DO NOT write additional comments.
+        You are an expert in programming. Your task is to generate documentation for the provided function. Please provide the documentation in a clear and concise manner. ONLY return the function with documentation inside it, DO NOT change the code in any way and DO NOT write additional comments.
         The documentation should include:
         - A brief description of what the function does.
         - The parameters of the function, including their types and descriptions.
