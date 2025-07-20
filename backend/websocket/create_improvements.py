@@ -15,14 +15,14 @@ class ImprovementsList(BaseModel):
 
 class Improvements:
     @staticmethod
-    def generate_improvements_from_ai(
+    async def generate_improvements_from_ai(
         function: typing.Callable, api_key: str
     ) -> typing.List[str]:
         parser = PydanticOutputParser(pydantic_object=ImprovementsList)
 
         format_instructions = parser.get_format_instructions()
 
-        prompt_template = """
+        prompt_template = '''
         You are an expert in programming. Your task is to analyze the provided function and suggest improvements. Please provide the suggestions in a clear and concise manner.
         
         {format_instructions}
@@ -39,7 +39,7 @@ class Improvements:
         
         Function to analyze:
         {function_string}
-        """
+        '''
 
         prompt = PromptTemplate(
             template=prompt_template,
@@ -51,7 +51,7 @@ class Improvements:
 
         final_prompt = prompt.format(function_string=function_string)
 
-        response = ai.send_request(
+        response = await ai.send_request_async(
             model="claude",
             api_key=api_key,
             user_query=function_string,
@@ -75,3 +75,4 @@ class Improvements:
                 return improvements_list.improvements
             except Exception:
                 return []
+

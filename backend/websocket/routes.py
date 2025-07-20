@@ -4,7 +4,6 @@ import fastapi
 
 from . import connection_manager, dependencies, handlers, utils
 
-
 router = fastapi.APIRouter()
 
 
@@ -31,6 +30,10 @@ async def websocket_endpoint(
 
             if message_type == "test_ai":
                 await handlers.handle_test_ai_message(websocket, message)
+
+            elif message_type == "verify_code":
+                await handlers.handle_verify_code_message(websocket, message)
+
             elif message_type == "send_code":
                 await handlers.handle_send_code_message(websocket, message)
 
