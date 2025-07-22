@@ -8,11 +8,24 @@ from . import create_docs, create_improvements, create_tests, responses, utils
 
 async def handle_test_ai_message(websocket: fastapi.WebSocket, message: dict):
     try:
-        ai_model, ai_api_key = function_utils.get_bot_information(websocket)
+        ai_api_key = function_utils.get_api_key_from_cookies(websocket)
 
-        if await ai.test_bot_connection_async(ai_model, ai_api_key):  # type: ignore
+        detected_model = await ai.detect_ai_model_async(ai_api_key)
+
+        if detected_model:
             response_message = utils.prepare_response_message(
-                message_type="ai_test_result", is_ok=True
+                message_type="ai_test_result",
+                message_id=message.get("id", ""),
+                is_ok=True,
+                detected_model=detected_model,
+            )
+            await utils.send_response_message(websocket, response_message)
+        else:
+            # API key doesn't work with either service - send 404-like error
+            response_message = utils.prepare_response_message(
+                message_type="error",
+                message_id=message.get("id", ""),
+                error_message="API key is not valid for any supported AI service.",
             )
             await utils.send_response_message(websocket, response_message)
 
@@ -37,6 +50,7 @@ async def handle_verify_code_message(websocket: fastapi.WebSocket, message: dict
 
     response_message = utils.prepare_response_message(
         message_type="verify_code_result",
+        message_id=message.get("id", ""),
         is_ok=True,
     )
 
@@ -78,7 +92,7 @@ async def handle_send_code_message(websocket: fastapi.WebSocket, message: dict):
             )
 
             response_message = utils.prepare_response_message(
-                message_type="return_docs", docs=docs
+                message_type="return_docs", message_id=validated_message.id, docs=docs
             )
             await utils.send_response_message(websocket, response_message)
 
@@ -92,6 +106,7 @@ async def handle_send_code_message(websocket: fastapi.WebSocket, message: dict):
 
             response_message = utils.prepare_response_message(
                 message_type="return_unit_tests",
+                message_id=validated_message.id,
                 unit_tests=unit_tests,
             )
             await utils.send_response_message(websocket, response_message)
@@ -106,6 +121,7 @@ async def handle_send_code_message(websocket: fastapi.WebSocket, message: dict):
 
             response_message = utils.prepare_response_message(
                 message_type="return_memory_tests",
+                message_id=validated_message.id,
                 memory_tests=memory_tests,
             )
             await utils.send_response_message(websocket, response_message)
@@ -122,6 +138,7 @@ async def handle_send_code_message(websocket: fastapi.WebSocket, message: dict):
 
             response_message = utils.prepare_response_message(
                 message_type="return_performance_tests",
+                message_id=validated_message.id,
                 performance_tests=performance_tests,
             )
             await utils.send_response_message(websocket, response_message)
@@ -139,6 +156,7 @@ async def handle_send_code_message(websocket: fastapi.WebSocket, message: dict):
 
             response_message = utils.prepare_response_message(
                 message_type="return_improvements",
+                message_id=validated_message.id,
                 improvements=improvements,
             )
             await utils.send_response_message(websocket, response_message)

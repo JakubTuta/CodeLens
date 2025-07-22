@@ -28,6 +28,7 @@ def validate_request_message(
 
 def prepare_response_message(
     message_type: models.response_message_types,
+    message_id: str = "",
     error_message: typing.Optional[str] = None,
     unit_tests: typing.Optional[typing.List[models.Test]] = None,
     memory_tests: typing.Optional[typing.List[models.Test]] = None,
@@ -35,8 +36,10 @@ def prepare_response_message(
     docs: typing.Optional[str] = None,
     improvements: typing.Optional[typing.List[str]] = None,
     is_ok: typing.Optional[bool] = None,
+    detected_model: typing.Optional[typing.Literal["gemini", "sonnet"]] = None,
 ) -> models.ResponseMessage:
     return models.ResponseMessage(
+        id=message_id,
         type=message_type,
         error_message=error_message,
         unit_tests=unit_tests,
@@ -45,6 +48,7 @@ def prepare_response_message(
         docs=docs,
         improvements=improvements,
         is_ok=is_ok,
+        detected_model=detected_model,
     )
 
 

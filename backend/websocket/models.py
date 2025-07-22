@@ -2,6 +2,8 @@ import typing
 
 import pydantic
 
+available_ai_models = typing.Literal["gemini", "sonnet"]
+
 response_message_types = typing.Literal[
     "error",
     "return_unit_tests",
@@ -33,6 +35,7 @@ message_types = {
 
 
 class RequestMessage(pydantic.BaseModel):
+    id: str
     type: typing.Literal["send_code", "test_ai", "verify_code"]
     code: typing.Optional[str] = None
     language: typing.Optional[typing.Literal["python"]] = None
@@ -45,6 +48,7 @@ class Test(pydantic.BaseModel):
 
 
 class ResponseMessage(pydantic.BaseModel):
+    id: str
     type: response_message_types
 
     # Error message or general message
@@ -61,8 +65,8 @@ class ResponseMessage(pydantic.BaseModel):
     # Improvements
     improvements: typing.Optional[typing.List[str]] = None
 
-    # Improvements
-    improvements: typing.Optional[typing.List[str]] = None
-
     # AI test / code verification result
     is_ok: typing.Optional[bool] = None
+
+    # Detected AI model name
+    detected_model: typing.Optional[available_ai_models] = None

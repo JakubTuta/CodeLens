@@ -22,7 +22,7 @@ class Improvements:
 
         format_instructions = parser.get_format_instructions()
 
-        prompt_template = '''
+        prompt_template = """
         You are an expert in programming. Your task is to analyze the provided function and suggest improvements. Please provide the suggestions in a clear and concise manner.
         
         {format_instructions}
@@ -39,7 +39,7 @@ class Improvements:
         
         Function to analyze:
         {function_string}
-        '''
+        """
 
         prompt = PromptTemplate(
             template=prompt_template,
@@ -51,8 +51,7 @@ class Improvements:
 
         final_prompt = prompt.format(function_string=function_string)
 
-        response = await ai.send_request_async(
-            model="claude",
+        response = await ai.send_request_with_auto_detection_async(
             api_key=api_key,
             user_query=function_string,
             system_instructions=final_prompt,
@@ -75,4 +74,3 @@ class Improvements:
                 return improvements_list.improvements
             except Exception:
                 return []
-

@@ -87,3 +87,13 @@ def get_bot_information(websocket: fastapi.WebSocket):
         raise Exception("AI model or API key not provided in cookies.")
 
     return ai_model, ai_api_key
+
+
+def get_api_key_from_cookies(websocket: fastapi.WebSocket):
+    cookies = websocket.cookies
+    ai_api_key = cookies.get("aiApiKey", None)
+
+    if not ai_api_key:
+        raise Exception("API key not provided in cookies.")
+
+    return ai_api_key

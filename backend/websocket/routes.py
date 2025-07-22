@@ -28,14 +28,13 @@ async def websocket_endpoint(
 
             message_type = message.get("type")
 
-            if message_type == "test_ai":
-                await handlers.handle_test_ai_message(websocket, message)
-
-            elif message_type == "verify_code":
-                await handlers.handle_verify_code_message(websocket, message)
-
-            elif message_type == "send_code":
-                await handlers.handle_send_code_message(websocket, message)
+            match message_type:
+                case "test_ai":
+                    await handlers.handle_test_ai_message(websocket, message)
+                case "verify_code":
+                    await handlers.handle_verify_code_message(websocket, message)
+                case "send_code":
+                    await handlers.handle_send_code_message(websocket, message)
 
     except fastapi.WebSocketDisconnect:
         manager.disconnect(websocket)

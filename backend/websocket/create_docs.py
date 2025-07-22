@@ -6,7 +6,7 @@ from helpers import ai, function_utils
 
 class Documentation:
     @staticmethod
-    def generate_documentation_from_ai(
+    async def generate_documentation_from_ai_async(
         function: typing.Callable, api_key: str
     ) -> typing.Optional[str]:
         template = """
@@ -33,8 +33,7 @@ class Documentation:
         ```
         """
         function_string = function_utils.function_to_text(function)
-        response = ai.send_request(
-            model="claude",
+        response = await ai.send_request_with_auto_detection_async(
             api_key=api_key,
             user_query=function_string,
             system_instructions=template,
@@ -58,21 +57,4 @@ class Documentation:
     async def get_docs_async(
         self, function: typing.Callable, api_key: str
     ) -> typing.Optional[str]:
-        result = None
-        exception = None
-
-        def worker():
-            nonlocal result, exception
-            try:
-                result = self.generate_documentation_from_ai(function, api_key)
-            except Exception as e:
-                exception = e
-
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, worker)
-
-        if exception:
-            print(f"Exception during documentation generation: {exception}")
-            return None
-
-        return result
+        return await self.generate_documentation_from_ai_async(function, api_key)
