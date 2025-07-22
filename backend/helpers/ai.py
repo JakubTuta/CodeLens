@@ -159,10 +159,6 @@ async def test_bot_connection_async(
 async def detect_ai_model_async(
     api_key: str,
 ) -> typing.Optional[models.available_ai_models]:
-    """
-    Test the API key against both Gemini and Claude to determine which AI service it belongs to.
-    Returns 'gemini' if it's a valid Gemini API key, 'sonnet' if it's a valid Claude API key, or None if neither.
-    """
     if await test_bot_connection_async("gemini", api_key):
         return "gemini"
 
@@ -182,9 +178,6 @@ async def send_request_with_auto_detection_async(
         anthropic.types.Message,
     ]
 ]:
-    """
-    Automatically detect the AI model based on the API key and send a request.
-    """
     detected_model = await detect_ai_model_async(api_key)
 
     if not detected_model:

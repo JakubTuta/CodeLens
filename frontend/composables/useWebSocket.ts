@@ -1,10 +1,10 @@
-import { ref } from 'vue'
+import type { RequestMessage, ResponseMessage } from '~/types/websocket'
 
 const socket = ref<WebSocket | null>(null)
 const isConnected = ref(false)
 const error = ref<string | null>(null)
 
-const messageHandlers = ref<((data: any) => void)[]>([])
+const messageHandlers = ref<((data: ResponseMessage) => void)[]>([])
 
 export function useWebSocket() {
   const config = useRuntimeConfig()
@@ -24,12 +24,12 @@ export function useWebSocket() {
       socket.value.onopen = () => {
         isConnected.value = true
         error.value = null
-        console.log('WebSocket connected')
+        console.warn('WebSocket connected')
       }
 
       socket.value.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data)
+          const data: ResponseMessage = JSON.parse(event.data)
           messageHandlers.value.forEach(handler => handler(data))
         }
         catch (e) {
@@ -47,7 +47,12 @@ export function useWebSocket() {
         isConnected.value = false
         socket.value = null
         messageHandlers.value = []
-        console.log('WebSocket disconnected')
+        console.warn('WebSocket disconnected')
+
+        if (import.meta.client) {
+          const { showConnectionError } = useSnackbar()
+          showConnectionError()
+        }
       }
     }
     catch (e: any) {
@@ -62,7 +67,7 @@ export function useWebSocket() {
     }
   }
 
-  const onSendMessage = (data: any) => {
+  const onSendMessage = (data: RequestMessage) => {
     if (socket.value && isConnected.value) {
       socket.value.send(JSON.stringify(data))
     }
@@ -71,7 +76,7 @@ export function useWebSocket() {
     }
   }
 
-  const onMessage = (handler: (data: any) => void) => {
+  const onMessage = (handler: (data: ResponseMessage) => void) => {
     messageHandlers.value.push(handler)
 
     const unregister = () => {

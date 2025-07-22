@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
 import { useStepper } from '~/composables/useStepper'
 import { useStepperKeyboardNavigation } from '~/composables/useStepperKeyboardNavigation'
 import { useWebSocket } from '~/composables/useWebSocket'
@@ -106,5 +105,8 @@ onUnmounted(() => {
         </div>
       </v-container>
     </v-main>
+
+    <!-- Global Snackbar -->
+    <AppSnackbar />
   </v-app>
 </template>
