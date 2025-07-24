@@ -92,7 +92,7 @@ onUnmounted(() => {
           class="mb-3"
           :class="{'disabled-icon': !generateImprovements}"
         >
-          mdi-auto-fix
+          mdi-brush
         </v-icon>
 
         <h2 class="text-h4 mb-2">
@@ -128,7 +128,7 @@ onUnmounted(() => {
         color="grey-lighten-1"
         class="mb-3"
       >
-        mdi-auto-fix-off
+        mdi-brush-off
       </v-icon>
 
       <h3 class="text-h6 text-medium-emphasis mb-2">
