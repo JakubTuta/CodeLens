@@ -16,7 +16,9 @@ class ImprovementsList(BaseModel):
 class Improvements:
     @staticmethod
     async def generate_improvements_from_ai(
-        function: typing.Callable, api_key: str
+        function: typing.Callable,
+        api_key: str,
+        function_text: typing.Optional[str] = None,
     ) -> typing.List[str]:
         parser = PydanticOutputParser(pydantic_object=ImprovementsList)
 
@@ -47,7 +49,10 @@ class Improvements:
             partial_variables={"format_instructions": format_instructions},
         )
 
-        function_string = function_utils.function_to_text(function)
+        if function_text:
+            function_string = function_text
+        else:
+            function_string = function_utils.function_to_text(function)
 
         final_prompt = prompt.format(function_string=function_string)
 

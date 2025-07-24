@@ -1,25 +1,13 @@
 <script setup lang="ts">
 import { useStepper } from '~/composables/useStepper'
-import { useStepperKeyboardNavigation } from '~/composables/useStepperKeyboardNavigation'
-import { useWebSocket } from '~/composables/useWebSocket'
 
-const {
-  connect,
-  disconnect,
-  onMessage,
-} = useWebSocket()
+const webSocketStore = useWebSocketStore()
 
 const {
   stepperItems,
   currentStep,
   navigateToStep,
 } = useStepper()
-
-useStepperKeyboardNavigation()
-
-function connectSocket() {
-  connect()
-}
 
 function receiveMessage(response: any) {
   console.warn('Received message:', response)
@@ -32,16 +20,13 @@ function handleStepperClick(stepValue: number) {
 let unregister: () => void
 
 onMounted(() => {
-  connectSocket()
-  unregister = onMessage(receiveMessage)
+  unregister = webSocketStore.onMessage(receiveMessage)
 })
 
 onUnmounted(() => {
   if (unregister) {
     unregister()
   }
-
-  disconnect()
 })
 </script>
 
@@ -53,27 +38,6 @@ onUnmounted(() => {
           <h1 class="text-h4">
             CodeLens
           </h1>
-
-          <v-tooltip bottom>
-            <template #activator="{props}">
-              <v-icon
-                v-bind="props"
-                color="grey"
-              >
-                mdi-keyboard
-              </v-icon>
-            </template>
-
-            <div>
-              Keyboard shortcuts:
-
-              <br>
-              Ctrl + ← Previous step
-
-              <br>
-              Ctrl + → Next step
-            </div>
-          </v-tooltip>
         </div>
 
         <v-stepper

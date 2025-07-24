@@ -33,8 +33,14 @@ async def websocket_endpoint(
                     await handlers.handle_test_ai_message(websocket, message)
                 case "verify_code":
                     await handlers.handle_verify_code_message(websocket, message)
-                case "send_code":
-                    await handlers.handle_send_code_message(websocket, message)
+                case "generate_tests":
+                    await handlers.handle_generate_tests_message(websocket, message)
+                case "generate_docs":
+                    await handlers.handle_generate_docs_message(websocket, message)
+                case "generate_improvements":
+                    await handlers.handle_generate_improvements_message(
+                        websocket, message
+                    )
 
     except fastapi.WebSocketDisconnect:
         manager.disconnect(websocket)

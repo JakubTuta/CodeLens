@@ -1,18 +1,24 @@
 import asyncio
 import typing
-from typing import Callable, Literal
 
 from helpers import function_utils, test_utils
 
 from . import models
 
 
+def create_test_title(test_name: str) -> str:
+    if test_name.startswith("test_"):
+        test_name = test_name[5:]
+
+    return " ".join(word.capitalize() for word in test_name.split("_"))
+
+
 class BaseTestGenerator:
-    test_type: Literal["unit", "memory", "performance"] = "unit"
+    test_type: typing.Literal["unit", "memory", "performance"] = "unit"
     test_name: str = "base"
 
     async def get_tests_async(
-        self, function: typing.Callable
+        self, function: typing.Callable, function_text: typing.Optional[str] = None
     ) -> typing.List[models.Test]:
         result = []
         exception = None
@@ -25,15 +31,21 @@ class BaseTestGenerator:
                 if not function or not func_name:
                     return
 
-                function_string = function_utils.function_to_text(function)
+                if function_text:
+                    function_string = function_text
+                else:
+                    function_string = function_utils.function_to_text(function)
+
                 sig_info = test_utils.analyze_function_signature(function)
                 test_code = self._generate_test(func_name, function_string, sig_info)
 
                 if test_code:
+                    test_name = f"test_{func_name}_{self.test_name}"
                     result.append(
                         models.Test(
                             type=self.test_type,
-                            name=f"test_{func_name}_{self.test_name}",
+                            name=test_name,
+                            title=create_test_title(test_name),
                             code=test_code,
                         )
                     )
@@ -60,7 +72,7 @@ class BaseTestGenerator:
 
 class UnitTest(BaseTestGenerator):
     async def get_tests_async(
-        self, function: typing.Callable
+        self, function: typing.Callable, function_text: typing.Optional[str] = None
     ) -> typing.List[models.Test]:
         test_generators = [
             HypothesisTestGenerator(),
@@ -71,7 +83,9 @@ class UnitTest(BaseTestGenerator):
             MathematicalPropertyTestGenerator(),
         ]
 
-        tasks = [gen.get_tests_async(function) for gen in test_generators]
+        tasks = [
+            gen.get_tests_async(function, function_text) for gen in test_generators
+        ]
         results = await asyncio.gather(*tasks)
 
         return [test for sublist in results for test in sublist]
@@ -108,6 +122,7 @@ class HypothesisTestGenerator(BaseTestGenerator):
 
         return "\n".join(
             imports
+            + [""]
             + [
                 f"@given({', '.join(given_params)})",
                 f"def test_{func_name}_hypothesis({', '.join(param_names)}):",
@@ -176,6 +191,7 @@ class EdgeCaseTestGenerator(BaseTestGenerator):
 
         return "\n".join(
             ["import pytest"]
+            + [""]
             + [
                 f"def test_{func_name}_edge_cases():",
                 '    """Test function with edge case inputs."""',
@@ -221,6 +237,7 @@ class PropertyTestGenerator(BaseTestGenerator):
 
         return "\n".join(
             imports
+            + [""]
             + [
                 f"@given({', '.join(given_params)})",
                 f"def test_{func_name}_properties({', '.join(param_names)}):",
@@ -271,6 +288,7 @@ class TypeConsistencyTestGenerator(BaseTestGenerator):
 
         return "\n".join(
             imports
+            + [""]
             + [
                 f"@given({', '.join(given_params)})",
                 f"def test_{func_name}_type_consistency({', '.join(param_names)}):",
@@ -318,6 +336,7 @@ class DeterministicTestGenerator(BaseTestGenerator):
 
         return "\n".join(
             imports
+            + [""]
             + [
                 f"@given({', '.join(given_params)})",
                 f"def test_{func_name}_deterministic({', '.join(param_names)}):",
@@ -372,6 +391,7 @@ class MathematicalPropertyTestGenerator(BaseTestGenerator):
 
             return "\n".join(
                 imports
+                + [""]
                 + [
                     f"@given(a={strategy1}, b={strategy2})",
                     f"def test_{func_name}_mathematical_properties(a, b):",
@@ -394,9 +414,9 @@ class MemoryTest(BaseTestGenerator):
     test_name = "memory_usage"
 
     async def get_tests_async(
-        self, function: typing.Callable
+        self, function: typing.Callable, function_text: typing.Optional[str] = None
     ) -> typing.List[models.Test]:
-        return await super().get_tests_async(function)
+        return await super().get_tests_async(function, function_text)
 
     def _generate_test(
         self,
@@ -436,6 +456,7 @@ class MemoryTest(BaseTestGenerator):
 
         return "\n".join(
             imports
+            + [""]
             + [
                 f"def test_{func_name}_memory_usage():",
                 '    """Test memory usage of the function."""',
@@ -458,9 +479,9 @@ class PerformanceTest(BaseTestGenerator):
     test_name = "performance"
 
     async def get_tests_async(
-        self, function: typing.Callable
+        self, function: typing.Callable, function_text: typing.Optional[str] = None
     ) -> typing.List[models.Test]:
-        return await super().get_tests_async(function)
+        return await super().get_tests_async(function, function_text)
 
     def _generate_test(
         self,
@@ -500,6 +521,7 @@ class PerformanceTest(BaseTestGenerator):
 
         return "\n".join(
             imports
+            + [""]
             + [
                 f"def test_{func_name}_performance():",
                 '    """Test performance of the function."""',

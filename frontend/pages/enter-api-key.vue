@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ResponseMessage } from '~/types/websocket'
 import { useStepperNavigation } from '~/composables/useStepperNavigation'
-import { useWebSocket } from '~/composables/useWebSocket'
 import { MESSAGE_TYPES } from '~/types/websocket'
 import { createTestAiMessage, generateMessageId } from '~/utils/websocket-helpers'
 
@@ -9,7 +8,8 @@ const apiKey = ref('')
 let saveTimeout: NodeJS.Timeout | null = null
 
 const { goNext, goPrevious, canGoNext, canGoPrevious, nextStepName, previousStepName } = useStepperNavigation()
-const { connect, disconnect, onSendMessage, onMessage, isConnected } = useWebSocket()
+const webSocketStore = useWebSocketStore()
+const { getApiKey, setApiKey, setAiModel } = useCookieStore()
 
 const showAlert = ref(false)
 const alertType = ref<'success' | 'error' | 'info'>('success')
@@ -17,19 +17,20 @@ const alertMessage = ref('')
 const detectedModel = ref<string | null>(null)
 const isVerifying = ref(false)
 
+let unregisterMessage: (() => void) | null = null
+
 onMounted(() => {
-  const savedApiKey = useCookie('aiApiKey', { default: () => '' })
+  const savedApiKey = getApiKey()
   if (savedApiKey.value) {
     apiKey.value = savedApiKey.value
   }
 
-  connect()
-
-  onMessage((data: ResponseMessage) => {
+  unregisterMessage = webSocketStore.onMessage((data: ResponseMessage) => {
     if (data.type === MESSAGE_TYPES.response.AI_TEST_RESULT) {
       isVerifying.value = false
       if (data.detected_model) {
         detectedModel.value = data.detected_model
+        setAiModel(data.detected_model)
         alertType.value = 'success'
         alertMessage.value = `AI model detected: ${data.detected_model}`
       }
@@ -51,17 +52,19 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  disconnect()
+  if (unregisterMessage) {
+    unregisterMessage()
+  }
 })
 
 function testApiKey(apiKeyValue: string) {
-  if (apiKeyValue && isConnected.value) {
+  if (apiKeyValue && webSocketStore.isConnected) {
     isVerifying.value = true
     showAlert.value = true
     alertType.value = 'info'
     alertMessage.value = 'Verifying API key...'
     const message = createTestAiMessage(generateMessageId())
-    onSendMessage(message)
+    webSocketStore.sendMessage(message)
   }
 }
 
@@ -70,17 +73,23 @@ watch(apiKey, (newValue) => {
     clearTimeout(saveTimeout)
   }
 
+  if (newValue.trim()) {
+    isVerifying.value = true
+    showAlert.value = true
+    alertType.value = 'info'
+    alertMessage.value = 'Verifying API key...'
+  }
+  else {
+    showAlert.value = false
+    detectedModel.value = null
+    isVerifying.value = false
+  }
+
   saveTimeout = setTimeout(() => {
-    const apiKeyCookie = useCookie('aiApiKey', { default: () => '' })
-    apiKeyCookie.value = newValue
+    setApiKey(newValue)
 
     if (newValue.trim()) {
       testApiKey(newValue)
-    }
-    else {
-      showAlert.value = false
-      detectedModel.value = null
-      isVerifying.value = false
     }
   }, 1000)
 })
@@ -101,28 +110,18 @@ watch(apiKey, (newValue) => {
           v-model="apiKey"
           label="API Key"
           placeholder="Enter your AI API key"
-          class="mx-auto mt-4 max-w-400px"
+          class="mx-auto mt-4 max-w-600px"
           clearable
           @click:clear="apiKey = ''"
         />
 
-        <v-alert
-          v-if="showAlert"
+        <ValidationAlert
+          :show="showAlert"
           :type="alertType"
-          class="mt-4"
-          closable
-          @click:close="showAlert = false"
-        >
-          <div class="d-flex align-center">
-            <v-progress-circular
-              v-if="isVerifying"
-              indeterminate
-              size="20"
-              class="mr-3"
-            />
-            {{ alertMessage }}
-          </div>
-        </v-alert>
+          :message="alertMessage"
+          :is-loading="isVerifying"
+          @close="showAlert = false"
+        />
       </v-card-text>
     </v-card>
 
@@ -174,24 +173,33 @@ watch(apiKey, (newValue) => {
                     class="feature-list"
                     lines="one"
                   >
-                    <v-list-item
-                      prepend-icon="mdi-check-circle"
-                      class="px-0"
-                    >
+                    <v-list-item>
+                      <template #prepend>
+                        <v-icon color="success">
+                          mdi-check-circle
+                        </v-icon>
+                      </template>
+
                       <v-list-item-title>Automatic test generation</v-list-item-title>
                     </v-list-item>
 
-                    <v-list-item
-                      prepend-icon="mdi-check-circle"
-                      class="px-0"
-                    >
+                    <v-list-item>
+                      <template #prepend>
+                        <v-icon color="success">
+                          mdi-check-circle
+                        </v-icon>
+                      </template>
+
                       <v-list-item-title>Test execution and results</v-list-item-title>
                     </v-list-item>
 
-                    <v-list-item
-                      prepend-icon="mdi-check-circle"
-                      class="px-0"
-                    >
+                    <v-list-item>
+                      <template #prepend>
+                        <v-icon color="success">
+                          mdi-check-circle
+                        </v-icon>
+                      </template>
+
                       <v-list-item-title>Basic code validation</v-list-item-title>
                     </v-list-item>
                   </v-list>
@@ -225,31 +233,43 @@ watch(apiKey, (newValue) => {
                     class="feature-list"
                     lines="one"
                   >
-                    <v-list-item
-                      prepend-icon="mdi-check-circle"
-                      class="px-0"
-                    >
+                    <v-list-item>
+                      <template #prepend>
+                        <v-icon color="success">
+                          mdi-check-circle
+                        </v-icon>
+                      </template>
+
                       <v-list-item-title>Everything from basic plan</v-list-item-title>
                     </v-list-item>
 
-                    <v-list-item
-                      prepend-icon="mdi-star"
-                      class="px-0"
-                    >
+                    <v-list-item>
+                      <template #prepend>
+                        <v-icon color="yellow">
+                          mdi-star
+                        </v-icon>
+                      </template>
+
                       <v-list-item-title>AI-generated documentation</v-list-item-title>
                     </v-list-item>
 
-                    <v-list-item
-                      prepend-icon="mdi-star"
-                      class="px-0"
-                    >
+                    <v-list-item>
+                      <template #prepend>
+                        <v-icon color="yellow">
+                          mdi-star
+                        </v-icon>
+                      </template>
+
                       <v-list-item-title>Code optimization tips</v-list-item-title>
                     </v-list-item>
 
-                    <v-list-item
-                      prepend-icon="mdi-star"
-                      class="px-0"
-                    >
+                    <v-list-item>
+                      <template #prepend>
+                        <v-icon color="yellow">
+                          mdi-star
+                        </v-icon>
+                      </template>
+
                       <v-list-item-title>Enhanced test suggestions</v-list-item-title>
                     </v-list-item>
                   </v-list>
@@ -393,14 +413,6 @@ watch(apiKey, (newValue) => {
   margin-bottom: 0.5rem;
 }
 
-.feature-list .v-list-item .v-icon {
-  color: rgb(var(--v-theme-success)) !important;
-}
-
-.feature-list .v-list-item[prepend-icon="mdi-star"] .v-icon {
-  color: rgb(var(--v-theme-warning)) !important;
-}
-
 .models-card {
   position: relative;
   backdrop-filter: blur(10px);
@@ -414,7 +426,7 @@ watch(apiKey, (newValue) => {
 }
 
 .model-item:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
 }
 

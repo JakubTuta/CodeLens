@@ -16,8 +16,16 @@ export function createRequestMessage(
   }
 }
 
-export function createSendCodeMessage(id: string, code: string, language: SupportedLanguages = 'python'): RequestMessage {
-  return createRequestMessage(id, MESSAGE_TYPES.request.SEND_CODE, { code, language })
+export function createGenerateTestsMessage(id: string, code: string, language: SupportedLanguages = 'python'): RequestMessage {
+  return createRequestMessage(id, MESSAGE_TYPES.request.GENERATE_TESTS, { code, language })
+}
+
+export function createGenerateDocsMessage(id: string, code: string, language: SupportedLanguages = 'python'): RequestMessage {
+  return createRequestMessage(id, MESSAGE_TYPES.request.GENERATE_DOCS, { code, language })
+}
+
+export function createGenerateImprovementsMessage(id: string, code: string, language: SupportedLanguages = 'python'): RequestMessage {
+  return createRequestMessage(id, MESSAGE_TYPES.request.GENERATE_IMPROVEMENTS, { code, language })
 }
 
 export function createTestAiMessage(id: string): RequestMessage {

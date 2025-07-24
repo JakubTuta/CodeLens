@@ -1,5 +1,3 @@
-// TypeScript mappings for Python WebSocket models
-
 export type AvailableAiModels = 'gemini' | 'sonnet'
 
 export type ResponseMessageTypes
@@ -12,7 +10,7 @@ export type ResponseMessageTypes
     | 'ai_test_result'
     | 'verify_code_result'
 
-export type RequestMessageTypes = 'send_code' | 'test_ai' | 'verify_code'
+export type RequestMessageTypes = 'generate_tests' | 'generate_docs' | 'generate_improvements' | 'test_ai' | 'verify_code'
 
 export type SupportedLanguages = 'python'
 
@@ -28,6 +26,7 @@ export interface RequestMessage {
 export interface Test {
   type: TestType
   name: string
+  title: string
   code: string
 }
 
@@ -58,7 +57,9 @@ export interface ResponseMessage {
 
 export const MESSAGE_TYPES = {
   request: {
-    SEND_CODE: 'send_code' as const,
+    GENERATE_TESTS: 'generate_tests' as const,
+    GENERATE_DOCS: 'generate_docs' as const,
+    GENERATE_IMPROVEMENTS: 'generate_improvements' as const,
     TEST_AI: 'test_ai' as const,
     VERIFY_CODE: 'verify_code' as const,
   },

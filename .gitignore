@@ -41,6 +41,7 @@ pnpm-debug.log*
 .output
 .nitro
 dist
+*.lock
 
 # Nuxt generate
 dist/

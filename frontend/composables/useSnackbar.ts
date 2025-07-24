@@ -63,7 +63,7 @@ export function useSnackbar() {
     show({
       message: 'Connection lost. Please refresh the page to reconnect.',
       color: 'error',
-      timeout: 0, // Don't auto-hide
+      timeout: 0,
       actions: [
         {
           label: 'Refresh',

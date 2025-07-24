@@ -17,7 +17,9 @@ response_message_types = typing.Literal[
 
 message_types = {
     "request": {
-        "send_code",
+        "generate_tests",
+        "generate_docs",
+        "generate_improvements",
         "test_ai",
         "verify_code",
     },
@@ -36,7 +38,7 @@ message_types = {
 
 class RequestMessage(pydantic.BaseModel):
     id: str
-    type: typing.Literal["send_code", "test_ai", "verify_code"]
+    type: typing.Literal["generate_tests", "generate_docs", "generate_improvements", "test_ai", "verify_code"]
     code: typing.Optional[str] = None
     language: typing.Optional[typing.Literal["python"]] = None
 
@@ -44,6 +46,7 @@ class RequestMessage(pydantic.BaseModel):
 class Test(pydantic.BaseModel):
     type: typing.Literal["unit", "memory", "performance"]
     name: str
+    title: str
     code: str
 
 

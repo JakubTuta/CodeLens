@@ -6,6 +6,22 @@ import pydantic
 from . import models
 
 
+def get_cookie(
+    websocket: fastapi.WebSocket, key: str, default: str | None = None
+) -> str | None:
+    cookie_key = f"CodeLens-{key}"
+    return websocket.cookies.get(cookie_key, default)
+
+
+def is_feature_enabled(websocket: fastapi.WebSocket, cookie_name: str) -> bool:
+    cookie_value = get_cookie(websocket, cookie_name)
+
+    if cookie_value is None or cookie_value == "true":
+        return True
+
+    return cookie_value != "false"
+
+
 async def send_error_message(websocket: fastapi.WebSocket, error_message: str):
     response_message = prepare_response_message(
         message_type="error",
