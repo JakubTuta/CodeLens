@@ -38,9 +38,20 @@ message_types = {
 
 class RequestMessage(pydantic.BaseModel):
     id: str
-    type: typing.Literal["generate_tests", "generate_docs", "generate_improvements", "test_ai", "verify_code"]
+    type: typing.Literal[
+        "generate_tests",
+        "generate_docs",
+        "generate_improvements",
+        "test_ai",
+        "verify_code",
+    ]
     code: typing.Optional[str] = None
     language: typing.Optional[typing.Literal["python"]] = None
+    ai_model: typing.Optional[available_ai_models] = None
+    ai_api_key: typing.Optional[str] = None
+    generate_tests: bool = True
+    generate_docs: bool = True
+    generate_improvements: bool = True
 
 
 class Test(pydantic.BaseModel):

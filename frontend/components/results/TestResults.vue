@@ -67,6 +67,7 @@ watch(generateTests, (newValue) => {
   setGenerateTests(newValue)
   if (newValue) {
     messageSent.value = false
+    sendTestsRequest()
   }
 })
 

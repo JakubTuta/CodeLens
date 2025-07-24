@@ -66,7 +66,11 @@ export function useCookieStore() {
   const hasCookie = (key: string) => {
     const cookie = getCookie(key)
 
-    return !!cookie.value.trim()
+    if (typeof cookie.value === 'string') {
+      return !!cookie.value.trim()
+    }
+
+    return !!cookie.value
   }
 
   const getApiKey = () => getCookie('aiApiKey')

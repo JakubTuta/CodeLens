@@ -61,6 +61,7 @@ watch(generateDocumentation, (newValue) => {
   setGenerateDocumentation(newValue)
   if (newValue) {
     messageSent.value = false
+    sendDocsRequest()
   }
 })
 

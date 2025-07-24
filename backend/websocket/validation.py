@@ -26,9 +26,11 @@ async def validate_code_and_get_function(
         return None, None
 
 
-async def validate_ai_access(websocket: fastapi.WebSocket) -> str | None:
-    ai_model = utils.get_cookie(websocket, "aiModel")
-    ai_api_key = utils.get_cookie(websocket, "aiApiKey")
+async def validate_ai_access(
+    websocket: fastapi.WebSocket, validated_message: typing.Any
+) -> str | None:
+    ai_model = validated_message.ai_model
+    ai_api_key = validated_message.ai_api_key
 
     if ai_model and ai_api_key:
         try:
@@ -55,12 +57,8 @@ async def validate_ai_access(websocket: fastapi.WebSocket) -> str | None:
 async def validate_and_prepare_request(
     websocket: fastapi.WebSocket,
     message: dict,
-    feature_cookie: str | None = None,
     require_ai: bool = False,
 ) -> tuple[typing.Any, typing.Callable, str | None] | tuple[None, None, None]:
-    if feature_cookie and not utils.is_feature_enabled(websocket, feature_cookie):
-        return None, None, None
-
     validated_message, valid_function = await validate_code_and_get_function(
         websocket, message
     )
@@ -69,7 +67,7 @@ async def validate_and_prepare_request(
 
     ai_api_key = None
     if require_ai:
-        ai_api_key = await validate_ai_access(websocket)
+        ai_api_key = await validate_ai_access(websocket, validated_message)
         if not ai_api_key:
             return None, None, None
 

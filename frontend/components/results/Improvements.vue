@@ -52,6 +52,7 @@ watch(generateImprovements, (newValue) => {
   setGenerateImprovements(newValue)
   if (newValue) {
     messageSent.value = false
+    sendImprovementsRequest()
   }
 })
 

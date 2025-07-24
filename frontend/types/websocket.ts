@@ -21,6 +21,11 @@ export interface RequestMessage {
   type: RequestMessageTypes
   code?: string
   language?: SupportedLanguages
+  ai_model?: AvailableAiModels
+  ai_api_key?: string
+  generate_tests?: boolean
+  generate_docs?: boolean
+  generate_improvements?: boolean
 }
 
 export interface Test {

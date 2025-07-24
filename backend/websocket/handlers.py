@@ -13,12 +13,12 @@ from . import (
 
 async def handle_test_ai_message(websocket: fastapi.WebSocket, message: dict):
     try:
-        ai_api_key = utils.get_cookie(websocket, "aiApiKey")
+        validated_message = utils.validate_request_message(message)
 
-        if not ai_api_key:
-            raise Exception("API key not provided in cookies.")
+        if not validated_message or not validated_message.ai_api_key:
+            raise Exception("API key not provided in the message.")
 
-        detected_model = await ai.detect_ai_model_async(ai_api_key)
+        detected_model = await ai.detect_ai_model_async(validated_message.ai_api_key)
 
         if detected_model:
             response_message = utils.prepare_response_message(
@@ -69,7 +69,6 @@ async def handle_generate_tests_message(websocket: fastapi.WebSocket, message: d
         await validation.validate_and_prepare_request(
             websocket=websocket,
             message=message,
-            feature_cookie="generateTests",
             require_ai=False,
         )
     )
@@ -90,7 +89,6 @@ async def handle_generate_docs_message(websocket: fastapi.WebSocket, message: di
         await validation.validate_and_prepare_request(
             websocket=websocket,
             message=message,
-            feature_cookie="generateDocumentation",
             require_ai=True,
         )
     )
@@ -120,7 +118,6 @@ async def handle_generate_improvements_message(
         await validation.validate_and_prepare_request(
             websocket=websocket,
             message=message,
-            feature_cookie="generateImprovements",
             require_ai=True,
         )
     )

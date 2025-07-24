@@ -1,4 +1,5 @@
-import type { RequestMessage, RequestMessageTypes, SupportedLanguages } from '~/types/websocket'
+import type { AvailableAiModels, RequestMessage, RequestMessageTypes, SupportedLanguages } from '~/types/websocket'
+import { useCookieStore } from '~/composables/useCookieStore'
 import { MESSAGE_TYPES } from '~/types/websocket'
 
 export function createRequestMessage(
@@ -7,13 +8,37 @@ export function createRequestMessage(
   options?: {
     code?: string
     language?: SupportedLanguages
+    ai_model?: AvailableAiModels
+    ai_api_key?: string
+    generate_tests?: boolean
+    generate_docs?: boolean
+    generate_improvements?: boolean
   },
 ): RequestMessage {
-  return {
+  const cookieStore = useCookieStore()
+
+  const message: RequestMessage = {
     id,
     type,
     ...options,
   }
+
+  if (cookieStore.hasApiKey())
+    message.ai_api_key = cookieStore.getApiKey().value
+
+  if (cookieStore.hasAiModel())
+    message.ai_model = cookieStore.getAiModel().value as AvailableAiModels
+
+  if (cookieStore.hasGenerateTests())
+    message.generate_tests = cookieStore.getGenerateTests()
+
+  if (cookieStore.hasGenerateDocumentation())
+    message.generate_docs = cookieStore.getGenerateDocumentation()
+
+  if (cookieStore.hasGenerateImprovements())
+    message.generate_improvements = cookieStore.getGenerateImprovements()
+
+  return message
 }
 
 export function createGenerateTestsMessage(id: string, code: string, language: SupportedLanguages = 'python'): RequestMessage {
