@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-runner-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: test-runner
+  template:
+    metadata:
+      labels:
+        component: test-runner
+    spec:
+      serviceAccountName: test-runner-sa
+      containers:
+        - name: test-runner
+          image: your-docker-hub-username/codelens-test-runner # Replace with your Docker Hub username
+          ports:
+            - containerPort: 8001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-runner-service
+spec:
+  selector:
+    component: test-runner
+  ports:
+    - protocol: TCP
+      port: 8001
+      targetPort: 8001

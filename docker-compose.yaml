@@ -31,6 +31,21 @@ services:
       backend:
         condition: service_started
 
+  test-runner:
+    build:
+      context: ./test-runner
+      dockerfile: Dockerfile
+    image: codelens-test-runner
+    container_name: codelens-test-runner
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./test-runner:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - codelens-network
+    restart: unless-stopped
+
 networks:
   codelens-network:
     driver: bridge
