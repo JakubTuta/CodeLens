@@ -15,9 +15,10 @@ const messageSent = ref(false)
 const improvements = ref<string[]>([])
 
 const hasImprovements = computed(() => improvements.value.length > 0)
+const hasCode = computed(() => !!code)
 
 function sendImprovementsRequest() {
-  if (!generateImprovements.value || !code.value.trim() || messageSent.value) {
+  if (!generateImprovements.value || !code || !code.value.trim() || messageSent.value) {
     return
   }
 
@@ -68,6 +69,9 @@ watch(
 
 onMounted(() => {
   unregisterHandler = webSocketStore.onMessage(handleMessage)
+  if (generateImprovements.value && hasCode.value) {
+    sendImprovementsRequest()
+  }
 })
 
 onUnmounted(() => {
@@ -142,9 +146,19 @@ onUnmounted(() => {
 
     <!-- Enabled state -->
     <div v-else>
+      <!-- Waiting for code -->
+      <v-alert
+        v-if="!hasCode"
+        type="info"
+        variant="tonal"
+        class="mb-4"
+      >
+        Waiting for code...
+      </v-alert>
+
       <!-- Loading state -->
       <div
-        v-if="isLoading"
+        v-else-if="isLoading"
         class="text-center"
       >
         <v-progress-circular

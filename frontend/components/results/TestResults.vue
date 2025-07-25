@@ -22,6 +22,7 @@ const hasAnyTests = computed(() => (
   || memoryTests.value.length > 0
   || performanceTests.value.length > 0
 ))
+const hasCode = computed(() => !!code)
 
 function sendTestsRequest() {
   if (!generateTests.value || !code.value.trim() || messageSent.value) {
@@ -83,6 +84,9 @@ watch(
 
 onMounted(() => {
   unregisterHandler = webSocketStore.onMessage(handleMessage)
+  if (generateTests.value && hasCode.value) {
+    sendTestsRequest()
+  }
 })
 
 onUnmounted(() => {
@@ -157,9 +161,19 @@ onUnmounted(() => {
 
     <!-- Enabled state -->
     <div v-else>
+      <!-- Waiting for code -->
+      <v-alert
+        v-if="!hasCode"
+        type="info"
+        variant="tonal"
+        class="mb-4"
+      >
+        Waiting for code...
+      </v-alert>
+
       <!-- Loading state or waiting for results -->
       <div
-        v-if="isLoading"
+        v-else-if="isLoading"
         class="text-center"
       >
         <v-progress-circular

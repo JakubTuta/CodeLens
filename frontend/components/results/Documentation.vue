@@ -15,6 +15,7 @@ const messageSent = ref(false)
 const documentation = ref<string>('')
 
 const hasDocumentation = computed(() => documentation.value.trim() !== '')
+const hasCode = computed(() => !!code)
 
 const containsCode = computed(() => {
   return documentation.value.includes('```')
@@ -26,7 +27,7 @@ const containsCode = computed(() => {
 })
 
 function sendDocsRequest() {
-  if (!generateDocumentation.value || !code.value.trim() || messageSent.value) {
+  if (!generateDocumentation.value || !code || !code.value.trim() || messageSent.value) {
     return
   }
 
@@ -77,6 +78,9 @@ watch(
 
 onMounted(() => {
   unregisterHandler = webSocketStore.onMessage(handleMessage)
+  if (generateDocumentation.value && hasCode.value) {
+    sendDocsRequest()
+  }
 })
 
 onUnmounted(() => {
@@ -151,9 +155,19 @@ onUnmounted(() => {
 
     <!-- Enabled state -->
     <div v-else>
+      <!-- Waiting for code -->
+      <v-alert
+        v-if="!hasCode"
+        type="info"
+        variant="tonal"
+        class="mb-4"
+      >
+        Waiting for code...
+      </v-alert>
+
       <!-- Loading state -->
       <div
-        v-if="isLoading"
+        v-else-if="isLoading"
         class="text-center"
       >
         <v-progress-circular

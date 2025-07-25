@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: codelens-backend
+    container_name: codelens-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    networks:
+      - codelens-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: codelens-frontend
+    container_name: codelens-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - codelens-network
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+
+networks:
+  codelens-network:
+    driver: bridge
