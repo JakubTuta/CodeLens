@@ -6,6 +6,8 @@ import fastapi
 from . import create_tests, models, responses, utils
 
 
+import websockets
+
 class TestGeneratorManager:
     def __init__(self):
         self.generators = {
@@ -38,16 +40,25 @@ class TestGeneratorManager:
             generator = self.generators[test_type]
             tests = await generator.get_tests_async(valid_function, code)
 
+            results = await self.send_tests_to_runner(tests)
+
             response_message = utils.prepare_response_message(
                 message_type=self.response_types[test_type],
                 message_id=message_id,
-                **{f"{test_type}_tests": tests},
+                **{f"{test_type}_tests": results},
             )
             await utils.send_response_message(websocket, response_message)
 
         except Exception as e:
             error_handler = self.error_handlers[test_type]
             await error_handler(websocket, e)
+
+    async def send_tests_to_runner(self, tests: str):
+        uri = "ws://test-runner-service:8001/ws"
+        async with websockets.connect(uri) as websocket:
+            await websocket.send(tests)
+            results = await websocket.recv()
+            return results
 
     async def generate_all_tests(
         self,
