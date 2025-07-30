@@ -40,8 +40,10 @@ class ContainerPool:
     async def execute_test(self, test_code: str):
         container = await self.pool.get()
         try:
-            exit_code, (output, _) = container.exec_run(["python", "-c", test_code])
-            return output.decode("utf-8")
+            exec_result = container.exec_run(["python", "-c", test_code], timeout=30)
+            return exec_result.output.decode("utf-8")
+        except Exception as e:
+            return str(e)
         finally:
             await self.pool.put(container)
 
