@@ -183,8 +183,8 @@ class EdgeCaseTestGenerator(BaseTestGenerator):
 
             if origin_type in self.EDGE_CASE_TESTS:
                 for description, value in self.EDGE_CASE_TESTS[origin_type]:
-                    test_cases.append(f"    # Test with {description}")
-                    test_cases.append(f"    result = {func_name}({value})")
+                    test_cases.append(f"        # Test with {description}")
+                    test_cases.append(f"        result = {func_name}({value})")
 
         if not test_cases:
             return ""
@@ -197,7 +197,9 @@ class EdgeCaseTestGenerator(BaseTestGenerator):
                 '    """Test function with edge case inputs."""',
                 f"{test_utils.indent_code(function_code, 4)}",
                 "    try:",
-                "\n".join(test_cases),
+            ]
+            + test_cases
+            + [
                 "        assert True",
                 "    except Exception as e:",
                 "        print(f'Edge case exception: {e}')",
@@ -235,6 +237,17 @@ class PropertyTestGenerator(BaseTestGenerator):
             given_params.append(f"{name}={strategy_str}")
             param_names.append(name)
 
+        return_type = sig_info["return_type"]
+        if return_type == typing.Any:
+            type_check_code = []
+        elif hasattr(return_type, "__name__"):
+            type_check_code = [
+                f"        if result is not None:",
+                f"            assert isinstance(result, {return_type.__name__})",
+            ]
+        else:
+            type_check_code = []
+
         return "\n".join(
             imports
             + [""]
@@ -246,10 +259,9 @@ class PropertyTestGenerator(BaseTestGenerator):
                 "    try:",
                 f"        result = {func_name}({', '.join(param_names)})",
                 "        assert result is not None or result is None",
-                f"        expected_return_type = {repr(sig_info['return_type'])}",
-                f"        if expected_return_type != {repr(typing.Any)}:",
-                "            if result is not None:",
-                "                assert isinstance(result, expected_return_type)",
+            ]
+            + type_check_code
+            + [
                 "    except Exception as e:",
                 "        raise",
             ]
@@ -286,6 +298,18 @@ class TypeConsistencyTestGenerator(BaseTestGenerator):
             given_params.append(f"{name}={strategy_str}")
             param_names.append(name)
 
+        return_type = sig_info["return_type"]
+        if return_type == typing.Any:
+            return ""
+
+        if hasattr(return_type, "__name__"):
+            type_check_code = [
+                f"        if result is not None:",
+                f"            assert isinstance(result, {return_type.__name__})",
+            ]
+        else:
+            return ""
+
         return "\n".join(
             imports
             + [""]
@@ -296,9 +320,9 @@ class TypeConsistencyTestGenerator(BaseTestGenerator):
                 f"{test_utils.indent_code(function_code, 4)}",
                 "    try:",
                 f"        result = {func_name}({', '.join(param_names)})",
-                f"        expected_type = {repr(sig_info['return_type'])}",
-                "        if result is not None:",
-                "            assert isinstance(result, expected_type)",
+            ]
+            + type_check_code
+            + [
                 "    except Exception:",
                 "        pass",
             ]

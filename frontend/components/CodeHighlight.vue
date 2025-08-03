@@ -47,7 +47,7 @@ watch(() => props.code, () => {
     <!-- Header with title and copy button -->
     <div
       v-if="title || copyable"
-      class="code-header d-flex align-center justify-space-between pa-3"
+      class="code-header d-flex justify-space-between align-center pa-3"
     >
       <div
         v-if="title"
@@ -134,7 +134,6 @@ watch(() => props.code, () => {
   color: #e8eaed;
 }
 
-/* Mobile responsiveness */
 @media (max-width: 960px) {
   .code-content {
     font-size: 0.8rem;
@@ -142,7 +141,6 @@ watch(() => props.code, () => {
   }
 }
 
-/* Smooth transitions */
 .code-highlight-card {
   transition: all 0.3s ease;
 }

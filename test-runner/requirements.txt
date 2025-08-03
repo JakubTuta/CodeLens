@@ -1,5 +1,6 @@
 fastapi
 uvicorn[standard]
-websockets
-docker
+websockets>=11.0
+kubernetes
+pydantic
 python-json-logger

@@ -10,7 +10,7 @@ metadata:
   name: test-runner-role
 rules:
 - apiGroups: [""]
-  resources: ["pods", "pods/log"]
+  resources: ["pods", "pods/log", "configmaps"]
   verbs: ["get", "list", "watch", "create", "delete"]
 - apiGroups: ["batch"]
   resources: ["jobs"]

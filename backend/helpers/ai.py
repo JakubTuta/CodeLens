@@ -26,7 +26,7 @@ async def fetch_latest_model_async(
         async for model in model_list:
             models.append(model)
 
-        pattern = r"^models/gemini-([\d.]+)-(pro|flash)$"
+        pattern = r"^models/gemini-([\d.]+)-(flash)$"
 
         matching_models = [
             (model, *re.match(pattern, model.name).groups())  # type: ignore
@@ -37,7 +37,7 @@ async def fetch_latest_model_async(
         latest_model = (
             max(
                 matching_models,
-                key=lambda x: (tuple(map(int, x[1].split("."))), x[2] == "pro"),  # type: ignore
+                key=lambda x: (tuple(map(int, x[1].split("."))), x[2] == "flash"),  # type: ignore
                 default=(None, None, None),
             )[0]
             if matching_models

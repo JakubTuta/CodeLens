@@ -10,8 +10,6 @@ const props = defineProps<{
   color: string
 }>()
 
-const { type } = toRefs(props)
-
 const typeConfig = {
   unit: {
     icon: 'mdi-test-tube',
@@ -30,12 +28,78 @@ const typeConfig = {
   },
 }
 
-const config = computed(() => typeConfig[type.value])
+const config = computed(() => typeConfig[props.type as keyof typeof typeConfig])
+
+const testStats = computed(() => {
+  const total = props.tests.length
+  const completed = props.tests.filter((test: Test) => test.status === 'success' || test.status === 'failed').length
+  const successful = props.tests.filter((test: Test) => test.status === 'success').length
+  const failed = props.tests.filter((test: Test) => test.status === 'failed').length
+  const running = props.tests.filter((test: Test) => test.status === 'running').length
+  const pending = props.tests.filter((test: Test) => !test.status || test.status === 'pending').length
+
+  return {
+    total,
+    completed,
+    successful,
+    failed,
+    running,
+    pending,
+    isRunning: running > 0,
+  }
+})
+
+const overallStatus = computed(() => {
+  if (testStats.value.running > 0) {
+    return 'running'
+  }
+  if (testStats.value.pending > 0 && testStats.value.completed === 0) {
+    return 'pending'
+  }
+  if (testStats.value.failed > 0) {
+    return 'failed'
+  }
+  if (testStats.value.successful === testStats.value.total && testStats.value.total > 0) {
+    return 'success'
+  }
+
+  return 'pending'
+})
+
+const statusColor = computed(() => {
+  switch (overallStatus.value) {
+    case 'pending':
+      return 'grey'
+    case 'running':
+      return 'warning'
+    case 'success':
+      return 'success'
+    case 'failed':
+      return 'error'
+    default:
+      return 'grey'
+  }
+})
+
+const statusIcon = computed(() => {
+  switch (overallStatus.value) {
+    case 'pending':
+      return 'mdi-clock-outline'
+    case 'running':
+      return 'mdi-loading'
+    case 'success':
+      return 'mdi-check-circle'
+    case 'failed':
+      return 'mdi-alert-circle'
+    default:
+      return 'mdi-clock-outline'
+  }
+})
 </script>
 
 <template>
   <div
-    v-if="tests.length > 0"
+    v-if="props.tests.length > 0"
     class="test-group mb-6"
   >
     <div class="test-group-header mb-4">
@@ -47,23 +111,58 @@ const config = computed(() => typeConfig[type.value])
         />
 
         <h3 class="text-h6 font-weight-bold">
-          {{ title }}
+          {{ props.title }}
         </h3>
 
-        <v-chip
-          :color="config.color"
-          variant="tonal"
-          size="small"
-        >
-          {{ tests.length }} {{ tests.length === 1
-            ? 'test'
-            : 'tests' }}
-        </v-chip>
+        <!-- Overall Status -->
+        <div class="d-flex align-center ga-2 ml-auto">
+          <!-- Execution Statistics -->
+          <div
+            v-if="testStats.completed > 0"
+            class="text-caption text-medium-emphasis"
+          >
+            {{ testStats.successful }}/{{ testStats.total }} passed
+          </div>
+
+          <!-- Status Icon -->
+          <v-icon
+            :icon="statusIcon"
+            :color="statusColor"
+            :class="{'rotating': overallStatus === 'running'}"
+            size="20"
+          />
+        </div>
       </div>
 
       <p class="text-body-2 text-medium-emphasis ml-9">
         {{ config.description }}
       </p>
+
+      <!-- Progress Bar for Running Tests -->
+      <div
+        v-if="testStats.isRunning || testStats.pending > 0"
+        class="ml-9 mt-3"
+      >
+        <v-progress-linear
+          :model-value="testStats.completed / testStats.total * 100"
+          :color="statusColor"
+          height="4"
+          rounded
+        />
+
+        <div class="d-flex justify-space-between mt-1">
+          <span class="text-caption text-medium-emphasis">
+            {{ testStats.completed }}/{{ testStats.total }} completed
+          </span>
+
+          <span
+            v-if="testStats.isRunning"
+            class="text-caption text-warning"
+          >
+            {{ testStats.running }} running
+          </span>
+        </div>
+      </div>
     </div>
 
     <v-expansion-panels
@@ -71,8 +170,8 @@ const config = computed(() => typeConfig[type.value])
       class="test-expansion-panels"
     >
       <TestCase
-        v-for="(test, index) in tests"
-        :key="`${type}-${index}`"
+        v-for="(test, index) in props.tests"
+        :key="`${props.type}-${index}`"
         :test="test"
         :index="index"
       />
@@ -101,6 +200,19 @@ const config = computed(() => typeConfig[type.value])
 
 .test-expansion-panels {
   border-radius: 8px;
+}
+
+.rotating {
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 960px) {

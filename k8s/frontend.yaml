@@ -1,30 +1,45 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend-deployment
+  name: codelens-frontend
+  labels:
+    app: codelens
+    component: frontend
 spec:
   replicas: 1
   selector:
     matchLabels:
+      app: codelens
       component: frontend
   template:
     metadata:
       labels:
+        app: codelens
         component: frontend
     spec:
       containers:
         - name: frontend
-          image: your-docker-hub-username/codelens-frontend # Replace with your Docker Hub username
+          image: codelens-frontend:latest
+          imagePullPolicy: Never  # Use local image, don't pull from registry
           ports:
             - containerPort: 3000
+          env:
+            - name: NUXT_PUBLIC_API_URL
+              value: "http://codelens-backend:8000"
+            - name: WEBSOCKET_SERVER_URL
+              value: "ws://codelens-backend:8000"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-service
+  name: codelens-frontend
+  labels:
+    app: codelens
+    component: frontend
 spec:
   type: LoadBalancer
   selector:
+    app: codelens
     component: frontend
   ports:
     - protocol: TCP

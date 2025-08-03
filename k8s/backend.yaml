@@ -1,31 +1,62 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend-deployment
+  name: codelens-backend
+  labels:
+    app: codelens
+    component: backend
 spec:
   replicas: 1
   selector:
     matchLabels:
+      app: codelens
       component: backend
   template:
     metadata:
       labels:
+        app: codelens
         component: backend
     spec:
       containers:
         - name: backend
-          image: your-docker-hub-username/codelens-backend # Replace with your Docker Hub username
+          image: codelens-backend:latest
+          imagePullPolicy: Never  # Use local image, don't pull from registry
           ports:
             - containerPort: 8000
+          env:
+            - name: CORS_ORIGINS
+              value: "http://codelens-frontend:3000,http://localhost:3000"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend-service
+  name: codelens-backend
+  labels:
+    app: codelens
+    component: backend
 spec:
   selector:
+    app: codelens
     component: backend
   ports:
     - protocol: TCP
       port: 8000
       targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codelens-backend-external
+  labels:
+    app: codelens
+    component: backend
+spec:
+  selector:
+    app: codelens
+    component: backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: LoadBalancer

@@ -49,16 +49,71 @@ function handleMessage(message: ResponseMessage) {
     isLoading.value = false
   }
   else if (message.type === MESSAGE_TYPES.response.RETURN_UNIT_TESTS && message.unit_tests) {
-    unitTests.value = message.unit_tests
+    updateOrSetTests(unitTests, message.unit_tests)
     isLoading.value = false
   }
   else if (message.type === MESSAGE_TYPES.response.RETURN_MEMORY_TESTS && message.memory_tests) {
-    memoryTests.value = message.memory_tests
+    updateOrSetTests(memoryTests, message.memory_tests)
     isLoading.value = false
   }
   else if (message.type === MESSAGE_TYPES.response.RETURN_PERFORMANCE_TESTS && message.performance_tests) {
-    performanceTests.value = message.performance_tests
+    updateOrSetTests(performanceTests, message.performance_tests)
     isLoading.value = false
+  }
+  else if (message.type === MESSAGE_TYPES.response.TEST_RESULT_UPDATE && message.test_result) {
+    handleIndividualTestResult(message.test_result)
+  }
+}
+
+function handleIndividualTestResult(testResult: Test) {
+  const testArrays = [
+    { array: unitTests, type: 'unit' },
+    { array: memoryTests, type: 'memory' },
+    { array: performanceTests, type: 'performance' },
+  ]
+
+  for (const { array, type } of testArrays) {
+    if (testResult.type === type) {
+      const testIndex = array.value.findIndex(test => test.id === testResult.id || (test.name === testResult.name && test.title === testResult.title),
+      )
+
+      if (testIndex !== -1) {
+        const existingTest = array.value[testIndex]
+        if (existingTest) {
+          existingTest.status = testResult.status
+          existingTest.execution_success = testResult.execution_success
+          existingTest.execution_output = testResult.execution_output
+          existingTest.execution_error = testResult.execution_error
+          existingTest.execution_time = testResult.execution_time
+
+          console.warn(`Updated test result for ${testResult.name}: ${testResult.status}`)
+        }
+        break
+      }
+    }
+  }
+}
+
+function updateOrSetTests(currentTests: Ref<Test[]>, newTests: Test[]) {
+  if (currentTests.value.length === 0) {
+    currentTests.value = newTests
+  }
+  else if (currentTests.value.length === newTests.length) {
+    for (let i = 0; i < newTests.length; i++) {
+      const existingTest = currentTests.value[i]
+      const newTest = newTests[i]
+
+      if (existingTest && newTest && existingTest.name === newTest.name) {
+        existingTest.status = newTest.status
+        existingTest.execution_success = newTest.execution_success
+        existingTest.execution_output = newTest.execution_output
+        existingTest.execution_error = newTest.execution_error
+        existingTest.execution_time = newTest.execution_time
+      }
+    }
+  }
+  else {
+    currentTests.value = newTests
   }
 }
 
@@ -253,7 +308,6 @@ onUnmounted(() => {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Test group transition animations */
 .test-group-enter-active,
 .test-group-leave-active {
   transition: all 0.5s ease;

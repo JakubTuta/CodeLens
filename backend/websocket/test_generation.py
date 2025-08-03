@@ -1,12 +1,13 @@
 import asyncio
+import logging
 import typing
 
 import fastapi
 
-from . import create_tests, models, responses, utils
+from . import create_tests, models, responses, test_runner_client, utils
 
+logger = logging.getLogger(__name__)
 
-import websockets
 
 class TestGeneratorManager:
     def __init__(self):
@@ -40,25 +41,81 @@ class TestGeneratorManager:
             generator = self.generators[test_type]
             tests = await generator.get_tests_async(valid_function, code)
 
-            results = await self.send_tests_to_runner(tests)
+            logger.info(f"Generated {len(tests)} {test_type} tests")
+
+            for test in tests:
+                test.status = "pending"
 
             response_message = utils.prepare_response_message(
                 message_type=self.response_types[test_type],
                 message_id=message_id,
-                **{f"{test_type}_tests": results},
+                **{f"{test_type}_tests": tests},
             )
             await utils.send_response_message(websocket, response_message)
+            logger.info(f"Sent {test_type} tests with pending status to client")
+
+            def handle_test_result_sync(
+                test_id: str, result: test_runner_client.TestResult
+            ):
+                completed_test = None
+                for test in tests:
+                    if test.id == test_id:
+                        completed_test = test
+                        break
+
+                if completed_test:
+                    completed_test.execution_success = result.success
+                    completed_test.execution_output = result.output
+                    completed_test.execution_error = result.error
+                    completed_test.execution_time = result.execution_time
+                    completed_test.status = "success" if result.success else "failed"
+
+                    def send_update_in_background():
+                        async def send_update():
+                            try:
+                                response_message = utils.prepare_response_message(
+                                    message_type="test_result_update",
+                                    message_id=message_id,
+                                    test_result=completed_test,
+                                )
+                                await utils.send_response_message(
+                                    websocket, response_message
+                                )
+                                logger.info(
+                                    f"Sent individual test result update for {test_id}"
+                                )
+                            except Exception as e:
+                                logger.error(f"Error sending test result update: {e}")
+
+                        loop = asyncio.get_event_loop()
+                        if loop.is_running():
+                            asyncio.create_task(send_update())
+                        else:
+                            loop.run_until_complete(send_update())
+
+                    send_update_in_background()
+
+            for test in tests:
+                test.status = "running"
+
+            response_message = utils.prepare_response_message(
+                message_type=self.response_types[test_type],
+                message_id=message_id,
+                **{f"{test_type}_tests": tests},
+            )
+            await utils.send_response_message(websocket, response_message)
+            logger.info(f"Sent {test_type} tests with running status to client")
+
+            await test_runner_client.test_runner_client.execute_tests_streaming(
+                tests, handle_test_result_sync
+            )
+
+            logger.info(f"Completed streaming execution for {test_type} tests")
 
         except Exception as e:
+            logger.error(f"Error in generate_and_send_test for {test_type}: {e}")
             error_handler = self.error_handlers[test_type]
             await error_handler(websocket, e)
-
-    async def send_tests_to_runner(self, tests: str):
-        uri = "ws://test-runner-service:8001/ws"
-        async with websockets.connect(uri) as websocket:
-            await websocket.send(tests)
-            results = await websocket.recv()
-            return results
 
     async def generate_all_tests(
         self,
@@ -67,12 +124,54 @@ class TestGeneratorManager:
         code: str,
         message_id: str,
     ) -> None:
+        """Generate and execute all types of tests concurrently with streaming results"""
+
         tasks = [
             asyncio.create_task(
                 self.generate_and_send_test(
                     test_type, websocket, valid_function, code, message_id
                 )
             )
+            for test_type in self.generators.keys()
+        ]
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                test_type = list(self.generators.keys())[i]
+                logger.error(f"Error generating {test_type} tests: {result}")
+
+    async def _generate_tests_without_execution(
+        self,
+        websocket: fastapi.WebSocket,
+        valid_function: typing.Callable,
+        code: str,
+        message_id: str,
+    ) -> None:
+        """Fallback method to generate tests without execution when test runner is unavailable"""
+
+        async def generate_single_test_type(test_type: str):
+            try:
+                generator = self.generators[test_type]
+                tests = await generator.get_tests_async(valid_function, code)
+
+                for test in tests:
+                    test.status = "pending"
+
+                response_message = utils.prepare_response_message(
+                    message_type=self.response_types[test_type],
+                    message_id=message_id,
+                    **{f"{test_type}_tests": tests},
+                )
+                await utils.send_response_message(websocket, response_message)
+
+            except Exception as e:
+                error_handler = self.error_handlers[test_type]
+                await error_handler(websocket, e)
+
+        tasks = [
+            asyncio.create_task(generate_single_test_type(test_type))
             for test_type in self.generators.keys()
         ]
 

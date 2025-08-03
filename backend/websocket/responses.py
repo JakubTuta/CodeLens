@@ -4,10 +4,13 @@ from . import utils
 
 
 async def send_error_response(
-    websocket: fastapi.WebSocket, message_type: str, error_message: str
+    websocket: fastapi.WebSocket,
+    message_type: str,
+    error_message: str,
+    message_id: str = "",
 ):
     response_message = utils.prepare_response_message(
-        message_type=message_type, error_message=error_message  # type: ignore
+        message_type=message_type, error_message=error_message, message_id=message_id  # type: ignore
     )
     await utils.send_response_message(websocket, response_message)
 
@@ -75,4 +78,24 @@ async def send_improvements_generation_error(
 ):
     await send_error_response(
         websocket, "error", f"Failed to generate improvements: {str(error)}"
+    )
+
+
+async def send_no_tests_provided_error(websocket: fastapi.WebSocket, message_id: str):
+    await send_error_response(websocket, "error", "No tests provided.", message_id)
+
+
+async def send_invalid_test_format_error(
+    websocket: fastapi.WebSocket, message_id: str, details: str
+):
+    await send_error_response(
+        websocket, "error", f"Invalid test format: {details}", message_id
+    )
+
+
+async def send_test_execution_error(
+    websocket: fastapi.WebSocket, message_id: str, error: Exception
+):
+    await send_error_response(
+        websocket, "error", f"Test execution failed: {str(error)}", message_id
     )

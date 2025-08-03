@@ -6,9 +6,6 @@ import pydantic
 from . import models
 
 
-
-
-
 async def send_error_message(websocket: fastapi.WebSocket, error_message: str):
     response_message = prepare_response_message(
         message_type="error",
@@ -40,6 +37,7 @@ def prepare_response_message(
     improvements: typing.Optional[typing.List[str]] = None,
     is_ok: typing.Optional[bool] = None,
     detected_model: typing.Optional[typing.Literal["gemini", "sonnet"]] = None,
+    test_result: typing.Optional[models.Test] = None,
 ) -> models.ResponseMessage:
     return models.ResponseMessage(
         id=message_id,
@@ -52,6 +50,7 @@ def prepare_response_message(
         improvements=improvements,
         is_ok=is_ok,
         detected_model=detected_model,
+        test_result=test_result,
     )
 
 

@@ -1,3 +1,5 @@
+import os
+
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 from websocket.routes import router as websocket_router
@@ -6,9 +8,11 @@ from websocket.routes import router as websocket_router
 def create_app():
     app = fastapi.FastAPI(title="CodeLens")
 
+    cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000"],
+        allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

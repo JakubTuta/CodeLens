@@ -1,4 +1,5 @@
 import typing
+import uuid
 
 import pydantic
 
@@ -13,6 +14,7 @@ response_message_types = typing.Literal[
     "return_improvements",
     "ai_test_result",
     "verify_code_result",
+    "test_result_update",
 ]
 
 message_types = {
@@ -22,6 +24,7 @@ message_types = {
         "generate_improvements",
         "test_ai",
         "verify_code",
+        "run_tests",
     },
     "response": {
         "error",
@@ -32,6 +35,7 @@ message_types = {
         "return_improvements",
         "ai_test_result",
         "verify_code_result",
+        "test_result_update",
     },
 }
 
@@ -44,6 +48,7 @@ class RequestMessage(pydantic.BaseModel):
         "generate_improvements",
         "test_ai",
         "verify_code",
+        "run_tests",
     ]
     code: typing.Optional[str] = None
     language: typing.Optional[typing.Literal["python"]] = None
@@ -52,35 +57,42 @@ class RequestMessage(pydantic.BaseModel):
     generate_tests: bool = True
     generate_docs: bool = True
     generate_improvements: bool = True
+    tests: typing.Optional[typing.List["Test"]] = None
 
 
 class Test(pydantic.BaseModel):
+    id: str = pydantic.Field(default_factory=lambda: str(uuid.uuid4()))
     type: typing.Literal["unit", "memory", "performance"]
     name: str
     title: str
     code: str
+
+    status: typing.Optional[
+        typing.Literal["pending", "running", "success", "failed"]
+    ] = "pending"
+
+    execution_success: typing.Optional[bool] = None
+    execution_output: typing.Optional[str] = None
+    execution_error: typing.Optional[str] = None
+    execution_time: typing.Optional[float] = None
 
 
 class ResponseMessage(pydantic.BaseModel):
     id: str
     type: response_message_types
 
-    # Error message or general message
     error_message: typing.Optional[str] = None
 
-    # Tests
     unit_tests: typing.Optional[typing.List[Test]] = None
     memory_tests: typing.Optional[typing.List[Test]] = None
     performance_tests: typing.Optional[typing.List[Test]] = None
 
-    # Documentation
     docs: typing.Optional[str] = None
 
-    # Improvements
     improvements: typing.Optional[typing.List[str]] = None
 
-    # AI test / code verification result
     is_ok: typing.Optional[bool] = None
 
-    # Detected AI model name
     detected_model: typing.Optional[available_ai_models] = None
+
+    test_result: typing.Optional[Test] = None

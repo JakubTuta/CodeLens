@@ -82,9 +82,9 @@ watch(code, (newValue) => {
     isVerifying.value = false
   }
 
-  saveTimeout = setTimeout(() => {
-    setCode(newValue)
+  setCode(newValue)
 
+  saveTimeout = setTimeout(() => {
     if (newValue.trim()) {
       verifyCode(newValue)
     }

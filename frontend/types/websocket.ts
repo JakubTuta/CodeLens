@@ -9,12 +9,15 @@ export type ResponseMessageTypes
     | 'return_improvements'
     | 'ai_test_result'
     | 'verify_code_result'
+    | 'test_result_update'
 
 export type RequestMessageTypes = 'generate_tests' | 'generate_docs' | 'generate_improvements' | 'test_ai' | 'verify_code'
 
 export type SupportedLanguages = 'python'
 
 export type TestType = 'unit' | 'memory' | 'performance'
+
+export type TestStatus = 'pending' | 'running' | 'success' | 'failed'
 
 export interface RequestMessage {
   id: string
@@ -29,10 +32,16 @@ export interface RequestMessage {
 }
 
 export interface Test {
+  id?: string
   type: TestType
   name: string
   title: string
   code: string
+  status?: TestStatus
+  execution_success?: boolean
+  execution_output?: string
+  execution_error?: string
+  execution_time?: number
 }
 
 export interface ResponseMessage {
@@ -58,6 +67,9 @@ export interface ResponseMessage {
 
   // Detected AI model name
   detected_model?: AvailableAiModels
+
+  // Individual test result update
+  test_result?: Test
 }
 
 export const MESSAGE_TYPES = {
@@ -77,5 +89,6 @@ export const MESSAGE_TYPES = {
     RETURN_IMPROVEMENTS: 'return_improvements' as const,
     AI_TEST_RESULT: 'ai_test_result' as const,
     VERIFY_CODE_RESULT: 'verify_code_result' as const,
+    TEST_RESULT_UPDATE: 'test_result_update' as const,
   },
 } as const

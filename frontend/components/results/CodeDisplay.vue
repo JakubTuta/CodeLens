@@ -66,7 +66,7 @@ function goToEnterCode() {
               No Code Found
             </h2>
 
-            <p class="text-h6 text-medium-emphasis mb-6">
+            <p class="text-medium-emphasis text-h6 mb-6">
               Please enter your function code to see analysis results
             </p>
 

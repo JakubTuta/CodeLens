@@ -68,7 +68,7 @@ const benefits = [
           </h1>
 
           <!-- Subtitle -->
-          <p class="hero-subtitle text-h6 mb-8">
+          <p class="text-h6 hero-subtitle mb-8">
             Transform your code snippets into comprehensive test suites and documentation
             with the power of AI. Write better code, faster.
           </p>
@@ -92,7 +92,7 @@ const benefits = [
                   Auto Test Generation
                 </h3>
 
-                <p class="text-body-2 text-medium-emphasis">
+                <p class="text-medium-emphasis text-body-2">
                   Generate comprehensive test cases automatically from your functions
                 </p>
               </div>

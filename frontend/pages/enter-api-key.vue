@@ -85,9 +85,9 @@ watch(apiKey, (newValue) => {
     isVerifying.value = false
   }
 
-  saveTimeout = setTimeout(() => {
-    setApiKey(newValue)
+  setApiKey(newValue)
 
+  saveTimeout = setTimeout(() => {
     if (newValue.trim()) {
       testApiKey(newValue)
     }
@@ -306,7 +306,7 @@ watch(apiKey, (newValue) => {
                 cols="12"
                 sm="6"
               >
-                <div class="model-item d-flex align-center pa-3">
+                <div class="d-flex align-center model-item pa-3">
                   <v-avatar
                     size="32"
                     color="success"

@@ -1,4 +1,3 @@
-from config import get_settings
 from .connection_manager import ConnectionManager
 
 manager = ConnectionManager()
