@@ -13,6 +13,34 @@ try {
     exit 1
 }
 
+# Function to remove existing Docker image if it exists
+function Remove-DockerImage {
+    param (
+        [string]$ImageName
+    )
+    
+    Write-Host "Checking for existing image: $ImageName..." -ForegroundColor Cyan
+    $imageExists = docker images -q $ImageName 2>$null
+    
+    if ($imageExists) {
+        Write-Host "Removing existing image: $ImageName" -ForegroundColor Yellow
+        docker rmi $ImageName --force 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "[SUCCESS] Removed existing image: $ImageName" -ForegroundColor Green
+        } else {
+            Write-Host "[WARNING] Could not remove image: $ImageName (may be in use)" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "No existing image found for: $ImageName" -ForegroundColor Gray
+    }
+}
+
+Write-Host ""
+Write-Host "Cleaning up existing images..." -ForegroundColor Yellow
+Remove-DockerImage "codelens-frontend:latest"
+Remove-DockerImage "codelens-backend:latest"
+Remove-DockerImage "codelens-test-runner:latest"
+
 Write-Host ""
 Write-Host "Building containers..." -ForegroundColor Yellow
 
@@ -42,6 +70,16 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 Write-Host "[SUCCESS] Test runner built successfully" -ForegroundColor Green
+
+Write-Host ""
+Write-Host "Cleaning up dangling images..." -ForegroundColor Yellow
+$danglingImages = docker images -f "dangling=true" -q 2>$null
+if ($danglingImages) {
+    docker rmi $danglingImages --force 2>$null | Out-Null
+    Write-Host "[SUCCESS] Cleaned up dangling images" -ForegroundColor Green
+} else {
+    Write-Host "No dangling images to clean up" -ForegroundColor Gray
+}
 
 Write-Host ""
 Write-Host "All containers built successfully!" -ForegroundColor Green

@@ -1,4 +1,4 @@
-# Deploy CodeLens to Kubernetes with WebSocket fixes
+# Deploy CodeLens to Google Cloud Platform and Kubernetes
 
 Write-Host "Building Docker images..." -ForegroundColor Green
 
@@ -13,6 +13,31 @@ Write-Host "Building frontend image..." -ForegroundColor Yellow
 Set-Location frontend
 docker build -t codelens-frontend:latest .
 Set-Location ..
+
+# Build test runner image
+Write-Host "Building test runner image..." -ForegroundColor Yellow
+Set-Location test-runner
+docker build -t codelens-test-runner:latest .
+Set-Location ..
+
+Write-Host "Tagging images for Google Cloud Platform..." -ForegroundColor Green
+
+# Tag images for GCP Artifact Registry
+docker tag codelens-frontend:latest europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-frontend:latest
+docker tag codelens-backend:latest europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-backend:latest
+docker tag codelens-test-runner:latest europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-test-runner:latest
+
+Write-Host "Pushing images to Google Cloud Platform..." -ForegroundColor Green
+
+# Push images to GCP Artifact Registry
+Write-Host "Pushing frontend image..." -ForegroundColor Yellow
+docker push europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-frontend:latest
+
+Write-Host "Pushing backend image..." -ForegroundColor Yellow
+docker push europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-backend:latest
+
+Write-Host "Pushing test runner image..." -ForegroundColor Yellow
+docker push europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-test-runner:latest
 
 Write-Host "Applying Kubernetes manifests..." -ForegroundColor Green
 
