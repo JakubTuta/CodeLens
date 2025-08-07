@@ -1,70 +1,132 @@
-# Deploy CodeLens to Google Cloud Platform and Kubernetes
+# CodeLens - GCP Deployment Script
+# Deploys CodeLens to Google Cloud Platform
 
+Write-Host "CodeLens - GCP Deployment" -ForegroundColor Blue
+Write-Host "=========================" -ForegroundColor Blue
+Write-Host ""
+
+# Get configuration from user
+Write-Host "Please provide your GCP configuration:" -ForegroundColor Cyan
+Write-Host ""
+
+$PROJECT_ID = Read-Host "Enter your GCP Project ID"
+if ([string]::IsNullOrWhiteSpace($PROJECT_ID)) {
+    Write-Host "✗ Project ID is required" -ForegroundColor Red
+    Read-Host "Press Enter to exit"
+    exit 1
+}
+
+$CLUSTER_NAME = Read-Host "Enter GKE Cluster Name (default: codelens-cluster)" 
+if ([string]::IsNullOrWhiteSpace($CLUSTER_NAME)) {
+    $CLUSTER_NAME = "codelens-cluster"
+}
+
+$REGION = Read-Host "Enter GCP Region (default: europe-central2)"
+if ([string]::IsNullOrWhiteSpace($REGION)) {
+    $REGION = "europe-central2"
+}
+
+$REGISTRY = "$REGION-docker.pkg.dev/$PROJECT_ID/codelens-repo"
+
+Write-Host ""
+Write-Host "Configuration:" -ForegroundColor Yellow
+Write-Host "  Project ID: $PROJECT_ID" -ForegroundColor White
+Write-Host "  Cluster: $CLUSTER_NAME" -ForegroundColor White
+Write-Host "  Region: $REGION" -ForegroundColor White
+Write-Host "  Registry: $REGISTRY" -ForegroundColor White
+Write-Host ""
+
+$confirm = Read-Host "Continue with deployment? (y/n)"
+if ($confirm -ne "y" -and $confirm -ne "Y") {
+    Write-Host "Deployment cancelled." -ForegroundColor Yellow
+    exit 0
+}
+
+Write-Host ""
+Write-Host "Authenticating with Google Cloud..." -ForegroundColor Green
+gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+
+Write-Host "Getting GKE cluster credentials..." -ForegroundColor Green
+gcloud container clusters get-credentials $CLUSTER_NAME --region $REGION --project $PROJECT_ID
+
+Write-Host ""
 Write-Host "Building Docker images..." -ForegroundColor Green
 
-# Build backend image
-Write-Host "Building backend image..." -ForegroundColor Yellow
-Set-Location backend
-docker build -t codelens-backend:latest .
-Set-Location ..
+# Build images
+Write-Host "Building backend..." -ForegroundColor Yellow
+docker build -t codelens-backend:latest ./backend
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "✗ Backend build failed" -ForegroundColor Red
+    Read-Host "Press Enter to exit"
+    exit 1
+}
 
-# Build frontend image  
-Write-Host "Building frontend image..." -ForegroundColor Yellow
-Set-Location frontend
-docker build -t codelens-frontend:latest .
-Set-Location ..
+Write-Host "Building frontend..." -ForegroundColor Yellow
+docker build -t codelens-frontend:latest ./frontend
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "✗ Frontend build failed" -ForegroundColor Red
+    Read-Host "Press Enter to exit"
+    exit 1
+}
 
-# Build test runner image
-Write-Host "Building test runner image..." -ForegroundColor Yellow
-Set-Location test-runner
-docker build -t codelens-test-runner:latest .
-Set-Location ..
+Write-Host "Building test runner..." -ForegroundColor Yellow
+docker build -t codelens-test-runner:latest ./test-runner
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "✗ Test runner build failed" -ForegroundColor Red
+    Read-Host "Press Enter to exit"
+    exit 1
+}
 
-Write-Host "Tagging images for Google Cloud Platform..." -ForegroundColor Green
+Write-Host ""
+Write-Host "Tagging and pushing images..." -ForegroundColor Green
 
-# Tag images for GCP Artifact Registry
-docker tag codelens-frontend:latest europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-frontend:latest
-docker tag codelens-backend:latest europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-backend:latest
-docker tag codelens-test-runner:latest europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-test-runner:latest
+# Tag and push images
+$images = @(
+    @{Local="codelens-frontend:latest"; Remote="$REGISTRY/codelens-frontend:latest"},
+    @{Local="codelens-backend:latest"; Remote="$REGISTRY/codelens-backend:latest"},
+    @{Local="codelens-test-runner:latest"; Remote="$REGISTRY/codelens-test-runner:latest"}
+)
 
-Write-Host "Pushing images to Google Cloud Platform..." -ForegroundColor Green
+foreach ($image in $images) {
+    Write-Host "Processing $($image.Local)..." -ForegroundColor Yellow
+    docker tag $image.Local $image.Remote
+    docker push $image.Remote
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "✗ Failed to push $($image.Remote)" -ForegroundColor Red
+        Read-Host "Press Enter to exit"
+        exit 1
+    }
+}
 
-# Push images to GCP Artifact Registry
-Write-Host "Pushing frontend image..." -ForegroundColor Yellow
-docker push europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-frontend:latest
+Write-Host ""
+Write-Host "Deploying to Kubernetes..." -ForegroundColor Green
 
-Write-Host "Pushing backend image..." -ForegroundColor Yellow
-docker push europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-backend:latest
+# Deploy to Kubernetes
+kubectl apply -f k8s/gcp/rbac.yaml
+kubectl apply -f k8s/gcp/backend.yaml
+kubectl apply -f k8s/gcp/frontend.yaml
+kubectl apply -f k8s/gcp/test-runner.yaml
+kubectl apply -f k8s/gcp/ingress.yaml
 
-Write-Host "Pushing test runner image..." -ForegroundColor Yellow
-docker push europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-test-runner:latest
+Write-Host ""
+Write-Host "Waiting for deployments..." -ForegroundColor Yellow
+kubectl wait --for=condition=available --timeout=600s deployment/codelens-backend 2>$null
+kubectl wait --for=condition=available --timeout=600s deployment/codelens-frontend 2>$null
 
-Write-Host "Applying Kubernetes manifests..." -ForegroundColor Green
+Write-Host ""
+Write-Host "✓ Deployment completed!" -ForegroundColor Green
+Write-Host ""
+Write-Host "Getting service information..." -ForegroundColor Cyan
 
-# Apply RBAC first
-kubectl apply -f k8s/rbac.yaml
+Write-Host ""
+Write-Host "LoadBalancer Services:" -ForegroundColor Yellow
+kubectl get service codelens-frontend -o wide 2>$null
+kubectl get service codelens-backend-external -o wide 2>$null
 
-# Apply backend
-kubectl apply -f k8s/backend.yaml
-
-# Apply frontend 
-kubectl apply -f k8s/frontend.yaml
-
-# Apply test runner
-kubectl apply -f k8s/test-runner.yaml
-
-Write-Host "Waiting for deployments to be ready..." -ForegroundColor Green
-kubectl wait --for=condition=available --timeout=300s deployment/codelens-backend
-kubectl wait --for=condition=available --timeout=300s deployment/codelens-frontend
-
-Write-Host "Getting service URLs..." -ForegroundColor Green
-Write-Host "Backend service:" -ForegroundColor Yellow
-kubectl get service codelens-backend-external
-
-Write-Host "Frontend service:" -ForegroundColor Yellow  
-kubectl get service codelens-frontend
-
-Write-Host "Deployment complete!" -ForegroundColor Green
-Write-Host "To check WebSocket connectivity, run:" -ForegroundColor Cyan
-Write-Host "kubectl logs -f deployment/codelens-backend" -ForegroundColor White
-Write-Host "kubectl logs -f deployment/codelens-frontend" -ForegroundColor White
+Write-Host ""
+Write-Host "Important next steps:" -ForegroundColor Cyan
+Write-Host "1. Configure DNS to point your domain to the LoadBalancer IPs above" -ForegroundColor White
+Write-Host "2. Wait for SSL certificates to be provisioned (10-60 minutes)" -ForegroundColor White
+Write-Host "3. Monitor with: kubectl get pods -l app=codelens" -ForegroundColor White
+Write-Host ""
+Read-Host "Press Enter to continue"

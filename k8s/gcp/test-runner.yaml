@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codelens-test-runner
+  labels:
+    app: codelens
+    component: test-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: codelens
+      component: test-runner
+  template:
+    metadata:
+      labels:
+        app: codelens
+        component: test-runner
+    spec:
+      serviceAccountName: test-runner-sa
+      containers:
+        - name: test-runner
+          image: europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-test-runner:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8001
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codelens-test-runner
+  labels:
+    app: codelens
+    component: test-runner
+spec:
+  selector:
+    app: codelens
+    component: test-runner
+  ports:
+    - protocol: TCP
+      port: 8001
+      targetPort: 8001
+  type: ClusterIP

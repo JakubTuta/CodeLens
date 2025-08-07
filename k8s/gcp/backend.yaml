@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codelens-backend
+  labels:
+    app: codelens
+    component: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: codelens
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: codelens
+        component: backend
+    spec:
+      containers:
+        - name: backend
+          image: europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: CORS_ORIGINS
+              value: "https://codelens.online,https://www.codelens.online,http://localhost:3000"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codelens-backend
+  labels:
+    app: codelens
+    component: backend
+spec:
+  selector:
+    app: codelens
+    component: backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codelens-backend-external
+  labels:
+    app: codelens
+    component: backend
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  selector:
+    app: codelens
+    component: backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: LoadBalancer

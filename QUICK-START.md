@@ -32,11 +32,10 @@ Your application will be available at:
 ```
 CodeLens/
 ├── run-app.ps1           # 🚀 Main script - does everything!
-├── scripts/              # 📁 Individual scripts (if you need them)
-│   ├── build.ps1         # Build containers
-│   ├── start.ps1         # Start application
-│   ├── stop.ps1          # Stop application
-│   ├── connect.ps1       # Interactive connection
+├── scripts/              # 📁 Simple scripts
+│   ├── build.ps1         # Build Docker images
+│   ├── local.ps1         # Local development
+│   ├── deploy.ps1        # Deploy to GCP
 │   └── SIMPLE-GUIDE.md   # Detailed guide
 ├── frontend/             # Nuxt.js application
 ├── backend/              # FastAPI application
@@ -57,7 +56,8 @@ CodeLens/
 Stop-Job *port-forward*; Remove-Job *port-forward*
 
 # Stop the application
-.\scripts\stop.ps1
+.\scripts\local.ps1
+# Choose option 2 to stop
 ```
 
 ## Need Help?

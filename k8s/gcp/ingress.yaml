@@ -1,0 +1,58 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: codelens-ingress
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    kubernetes.io/ingress.global-static-ip-name: "codelens-ip"
+    networking.gke.io/managed-certificates: "codelens-ssl-cert"
+    kubernetes.io/ingress.allow-http: "false"
+spec:
+  tls:
+  - hosts:
+    - codelens.online
+    - www.codelens.online
+    - api.codelens.online
+    secretName: codelens-tls
+  rules:
+  - host: codelens.online
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: codelens-frontend
+            port:
+              number: 80
+  - host: www.codelens.online
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: codelens-frontend
+            port:
+              number: 80
+  - host: api.codelens.online
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: codelens-backend
+            port:
+              number: 8000
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: codelens-ssl-cert
+spec:
+  domains:
+    - codelens.online
+    - www.codelens.online
+    - api.codelens.online

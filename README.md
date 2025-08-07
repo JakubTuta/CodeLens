@@ -47,8 +47,11 @@ cd CodeLens
 # Deploy with Docker Compose (Development)
 docker-compose up --build
 
-# OR Deploy to Kubernetes (Production)
-kubectl apply -f k8s/
+# OR Deploy to Local Kubernetes
+kubectl apply -f k8s/local/
+
+# OR Deploy to GCP (Production)
+.\scripts\deploy.ps1
 ```
 
 ### 2. Access the Application
@@ -87,7 +90,7 @@ uvicorn main:app --reload --port 8001
 
 ## 📋 Deployment Options
 
-### Option 1: Docker Compose (Recommended for Development)
+### Option 1: Docker Compose (Quick Start)
 
 ```bash
 # Build and deploy all containers
@@ -100,35 +103,35 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### Option 2: Kubernetes (Recommended for Production)
+### Option 2: Local Kubernetes (Recommended)
 
-```bash
-# Deploy RBAC and services
-kubectl apply -f k8s/rbac.yaml
-kubectl apply -f k8s/test-runner.yaml
-kubectl apply -f k8s/backend.yaml
-kubectl apply -f k8s/frontend.yaml
+```powershell
+# Build images
+.\scripts\build.ps1
 
-# Check status
-kubectl get pods
-kubectl get services
+# Run locally
+.\scripts\local.ps1
 ```
 
-### Option 3: Automated Deployment Scripts
+### Option 3: Google Cloud Platform (Production)
 
-#### Linux/macOS
-
-```bash
-chmod +x deploy.sh
-./deploy.sh --compose              # Docker Compose
-./deploy.sh --kubernetes --push    # Kubernetes with registry push
+```powershell
+# Deploy to GCP (will prompt for configuration)
+.\scripts\deploy.ps1
 ```
+
+📖 **Simple Setup Guide**: See [scripts/SIMPLE-GUIDE.md](./scripts/SIMPLE-GUIDE.md) for easy step-by-step instructions.
+
+### Option 4: Manual Commands
 
 #### Windows PowerShell
 
 ```powershell
-.\deploy.ps1 -Compose              # Docker Compose
-.\deploy.ps1 -Kubernetes -Push     # Kubernetes with registry push
+# Build all images
+.\scripts\build.ps1
+
+# Local development
+.\scripts\local.ps1
 ```
 
 ## 🔄 Data Flow
