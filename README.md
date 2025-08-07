@@ -120,7 +120,11 @@ docker-compose down
 .\scripts\deploy.ps1
 ```
 
-📖 **Simple Setup Guide**: See [scripts/SIMPLE-GUIDE.md](./scripts/SIMPLE-GUIDE.md) for easy step-by-step instructions.
+**� Security Note**: This repository is safe for public GitHub. Generated configuration files containing your project ID and domain are automatically excluded from version control.
+
+�📖 **Simple Setup Guide**: See [scripts/SIMPLE-GUIDE.md](./scripts/SIMPLE-GUIDE.md) for easy step-by-step instructions.
+
+📋 **Security & Templates**: See [SECURITY-AND-TEMPLATES.md](./SECURITY-AND-TEMPLATES.md) for details about the template system and repository security.
 
 ### Option 4: Manual Commands
 
@@ -132,7 +136,21 @@ docker-compose down
 
 # Local development
 .\scripts\local.ps1
+
+# Clean repository before Git commits (removes sensitive data)
+.\scripts\cleanup-repo.ps1
 ```
+
+## 🛡️ Repository Security
+
+This repository is configured for **safe public sharing**:
+
+- ✅ **Template-based configs**: Uses `{{PROJECT_ID}}` placeholders instead of real values
+- ✅ **Generated files ignored**: `.gitignore` prevents accidental commits of sensitive data  
+- ✅ **Cleanup automation**: `cleanup-repo.ps1` removes generated files before commits
+- ✅ **No hardcoded secrets**: All environment-specific values are user-provided at deploy time
+
+**Before committing changes**: Always run `.\scripts\cleanup-repo.ps1` to ensure no sensitive configuration files are included.
 
 ## 🔄 Data Flow
 
@@ -226,25 +244,5 @@ resources:
 
 - Batch test execution requests
 - Structured result responses
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Follow the coding guidelines in `.github/copilot-instructions.md`
-4. Test your changes with both Docker Compose and Kubernetes
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🆘 Support
-
-- **Documentation**: See `/docs` folder for detailed guides
-- **Issues**: Create GitHub issues for bugs or feature requests
-- **Architecture**: Review `/docs/architecture.md` for system design details
-
----
 
 **CodeLens** - Transforming code quality through AI-powered testing in secure, scalable containers.

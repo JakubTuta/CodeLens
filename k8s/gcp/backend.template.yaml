@@ -19,13 +19,13 @@ spec:
     spec:
       containers:
         - name: backend
-          image: europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-backend:latest
+          image: {{REGISTRY}}/codelens-backend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
           env:
             - name: CORS_ORIGINS
-              value: "https://codelens.online,https://www.codelens.online,http://localhost:3000"
+              value: "https://{{DOMAIN}},https://www.{{DOMAIN}},http://localhost:3000"
           resources:
             requests:
               memory: "256Mi"

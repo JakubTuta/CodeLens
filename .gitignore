@@ -143,3 +143,7 @@ Thumbs.db
 *.tmp
 *.temp
 schema.png
+
+# Generated Kubernetes configuration files (keep templates only)
+k8s/gcp/*.yaml
+!k8s/gcp/*.template.yaml

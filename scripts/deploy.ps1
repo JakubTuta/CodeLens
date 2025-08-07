@@ -26,6 +26,13 @@ if ([string]::IsNullOrWhiteSpace($REGION)) {
     $REGION = "europe-central2"
 }
 
+$DOMAIN = Read-Host "Enter your domain (e.g., codelens.online)"
+if ([string]::IsNullOrWhiteSpace($DOMAIN)) {
+    Write-Host "✗ Domain is required" -ForegroundColor Red
+    Read-Host "Press Enter to exit"
+    exit 1
+}
+
 $REGISTRY = "$REGION-docker.pkg.dev/$PROJECT_ID/codelens-repo"
 
 Write-Host ""
@@ -33,6 +40,7 @@ Write-Host "Configuration:" -ForegroundColor Yellow
 Write-Host "  Project ID: $PROJECT_ID" -ForegroundColor White
 Write-Host "  Cluster: $CLUSTER_NAME" -ForegroundColor White
 Write-Host "  Region: $REGION" -ForegroundColor White
+Write-Host "  Domain: $DOMAIN" -ForegroundColor White
 Write-Host "  Registry: $REGISTRY" -ForegroundColor White
 Write-Host ""
 
@@ -100,6 +108,44 @@ foreach ($image in $images) {
 
 Write-Host ""
 Write-Host "Deploying to Kubernetes..." -ForegroundColor Green
+
+# Function to process template files
+function Process-Template {
+    param($templatePath, $outputPath, $replacements)
+    
+    # Check if output file already exists and ask user
+    if (Test-Path $outputPath) {
+        Write-Host "  Configuration file already exists: $outputPath" -ForegroundColor Yellow
+        $overwrite = Read-Host "  Overwrite existing file? (y/n)"
+        if ($overwrite -ne "y" -and $overwrite -ne "Y") {
+            Write-Host "  Skipping $outputPath" -ForegroundColor Gray
+            return
+        }
+    }
+    
+    Write-Host "  Processing: $templatePath → $outputPath" -ForegroundColor Green
+    $content = Get-Content $templatePath -Raw
+    foreach ($replacement in $replacements.GetEnumerator()) {
+        $content = $content -replace [regex]::Escape("{{$($replacement.Key)}}"), $replacement.Value
+    }
+    $content | Out-File -FilePath $outputPath -Encoding UTF8
+}
+
+# Prepare template replacements
+$replacements = @{
+    "PROJECT_ID" = $PROJECT_ID
+    "REGISTRY" = $REGISTRY
+    "DOMAIN" = $DOMAIN
+}
+
+Write-Host "Processing configuration templates..." -ForegroundColor Yellow
+
+# Process template files
+Process-Template -templatePath "k8s/gcp/rbac.template.yaml" -outputPath "k8s/gcp/rbac.yaml" -replacements $replacements
+Process-Template -templatePath "k8s/gcp/backend.template.yaml" -outputPath "k8s/gcp/backend.yaml" -replacements $replacements
+Process-Template -templatePath "k8s/gcp/frontend.template.yaml" -outputPath "k8s/gcp/frontend.yaml" -replacements $replacements
+Process-Template -templatePath "k8s/gcp/test-runner.template.yaml" -outputPath "k8s/gcp/test-runner.yaml" -replacements $replacements
+Process-Template -templatePath "k8s/gcp/ingress.template.yaml" -outputPath "k8s/gcp/ingress.yaml" -replacements $replacements
 
 # Deploy to Kubernetes
 kubectl apply -f k8s/gcp/rbac.yaml

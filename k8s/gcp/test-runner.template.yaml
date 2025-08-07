@@ -20,7 +20,7 @@ spec:
       serviceAccountName: test-runner-sa
       containers:
         - name: test-runner
-          image: europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-test-runner:latest
+          image: {{REGISTRY}}/codelens-test-runner:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8001

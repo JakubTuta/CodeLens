@@ -3,7 +3,7 @@ kind: ServiceAccount
 metadata:
   name: test-runner-sa
   annotations:
-    iam.gke.io/gcp-service-account: codelens-test-runner@codelens-467015.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: codelens-test-runner@{{PROJECT_ID}}.iam.gserviceaccount.com
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

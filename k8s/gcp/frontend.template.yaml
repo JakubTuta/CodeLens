@@ -19,15 +19,15 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: europe-central2-docker.pkg.dev/codelens-467015/codelens-repo/codelens-frontend:latest
+          image: {{REGISTRY}}/codelens-frontend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:
             - name: NUXT_PUBLIC_API_URL
-              value: "https://api.codelens.online"
+              value: "https://api.{{DOMAIN}}"
             - name: WEBSOCKET_SERVER_URL
-              value: "wss://api.codelens.online"
+              value: "wss://api.{{DOMAIN}}"
           resources:
             requests:
               memory: "128Mi"

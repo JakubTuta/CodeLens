@@ -4,19 +4,12 @@ metadata:
   name: codelens-ingress
   annotations:
     kubernetes.io/ingress.class: "gce"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
     kubernetes.io/ingress.global-static-ip-name: "codelens-ip"
     networking.gke.io/managed-certificates: "codelens-ssl-cert"
     kubernetes.io/ingress.allow-http: "false"
 spec:
-  tls:
-  - hosts:
-    - codelens.online
-    - www.codelens.online
-    - api.codelens.online
-    secretName: codelens-tls
   rules:
-  - host: codelens.online
+  - host: {{DOMAIN}}
     http:
       paths:
       - path: /
@@ -26,7 +19,7 @@ spec:
             name: codelens-frontend
             port:
               number: 80
-  - host: www.codelens.online
+  - host: www.{{DOMAIN}}
     http:
       paths:
       - path: /
@@ -36,7 +29,7 @@ spec:
             name: codelens-frontend
             port:
               number: 80
-  - host: api.codelens.online
+  - host: api.{{DOMAIN}}
     http:
       paths:
       - path: /
@@ -53,6 +46,6 @@ metadata:
   name: codelens-ssl-cert
 spec:
   domains:
-    - codelens.online
-    - www.codelens.online
-    - api.codelens.online
+    - {{DOMAIN}}
+    - www.{{DOMAIN}}
+    - api.{{DOMAIN}}
