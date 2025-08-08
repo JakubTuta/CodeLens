@@ -130,7 +130,15 @@ if (-not $skipConfiguration) {
         $REGISTRY = "$REGION-docker.pkg.dev/$PROJECT_ID/codelens-repo"
         
         $ingressContent = Get-Content "k8s/gcp/ingress.yaml" -Raw
-        $DOMAIN = ($ingressContent | Select-String "host: ([^\.]+\.[^\.]+)").Matches[0].Groups[1].Value
+        # Extract the first host that doesn't start with 'www.' or 'api.'
+        $hostMatches = $ingressContent | Select-String "host: ([^\s]+)" -AllMatches
+        $DOMAIN = ($hostMatches.Matches | Where-Object { $_.Groups[1].Value -notmatch '^(www\.|api\.)' } | Select-Object -First 1).Groups[1].Value
+        
+        # Validate extracted domain
+        if ([string]::IsNullOrWhiteSpace($DOMAIN) -or $DOMAIN -match '\s') {
+            throw "Invalid domain extracted: '$DOMAIN'"
+        }
+        
         $CLUSTER_NAME = "codelens-cluster"  # Default, as it's not stored in YAML files
         
         Write-Host "Extracted configuration from existing files:" -ForegroundColor Cyan
