@@ -20,14 +20,14 @@ spec:
       containers:
         - name: frontend
           image: codelens-frontend:latest
-          imagePullPolicy: Never  # Use local image, don't pull from registry
+          imagePullPolicy: IfNotPresent  # Try local first, then pull if needed
           ports:
             - containerPort: 3000
           env:
             - name: NUXT_PUBLIC_API_URL
-              value: "http://codelens-backend:8000"
-            - name: WEBSOCKET_SERVER_URL
-              value: "ws://codelens-backend:8000"
+              value: "http://localhost:8000"
+            - name: NUXT_PUBLIC_WEBSOCKET_SERVER_URL
+              value: "ws://localhost:8000"
 ---
 apiVersion: v1
 kind: Service

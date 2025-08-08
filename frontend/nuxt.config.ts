@@ -45,7 +45,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      websocketServerUrl: process.env.WEBSOCKET_SERVER_URL || 'ws://localhost:8000',
+      websocketServerUrl: process.env.NUXT_PUBLIC_WEBSOCKET_SERVER_URL || process.env.WEBSOCKET_SERVER_URL || 'ws://localhost:8000',
     },
   },
 

@@ -24,3 +24,13 @@ def create_app():
 
 
 app = create_app()
+
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to CodeLens API"}
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}

@@ -123,6 +123,9 @@ export default defineNuxtPlugin((app) => {
       VListItem: {
         rounded: 'lg',
       },
+      VAlert: {
+        variant: 'tonal',
+      },
     },
     display: {
       mobileBreakpoint: 'sm',

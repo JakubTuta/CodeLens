@@ -9,10 +9,9 @@ Write-Host ""
 Write-Host "Checking Docker..." -ForegroundColor Yellow
 try {
     docker info | Out-Null
-    Write-Host "✓ Docker is running" -ForegroundColor Green
+    Write-Host "Docker is running" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Docker is not running. Please start Docker Desktop." -ForegroundColor Red
-    Read-Host "Press Enter to exit"
+    Write-Host "Docker is not running. Please start Docker Desktop." -ForegroundColor Red
     exit 1
 }
 
@@ -28,9 +27,9 @@ function Remove-ExistingImage {
         Write-Host "  Removing existing image: $imageName" -ForegroundColor Yellow
         docker rmi $imageName -f | Out-Null
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "  ✓ Existing image removed" -ForegroundColor Green
+            Write-Host "  Existing image removed" -ForegroundColor Green
         } else {
-            Write-Host "  ⚠ Warning: Could not remove existing image" -ForegroundColor Yellow
+            Write-Host "  Warning: Could not remove existing image" -ForegroundColor Yellow
         }
     }
 }
@@ -40,39 +39,35 @@ Write-Host "Building frontend..." -ForegroundColor Cyan
 Remove-ExistingImage "codelens-frontend:latest"
 docker build -t codelens-frontend:latest ./frontend
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "✗ Frontend build failed" -ForegroundColor Red
-    Read-Host "Press Enter to exit"
+    Write-Host "Frontend build failed" -ForegroundColor Red
     exit 1
 }
-Write-Host "✓ Frontend built successfully" -ForegroundColor Green
+Write-Host "Frontend built successfully" -ForegroundColor Green
 
 # Build Backend  
 Write-Host "Building backend..." -ForegroundColor Cyan
 Remove-ExistingImage "codelens-backend:latest"
 docker build -t codelens-backend:latest ./backend
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "✗ Backend build failed" -ForegroundColor Red
-    Read-Host "Press Enter to exit"
+    Write-Host "Backend build failed" -ForegroundColor Red
     exit 1
 }
-Write-Host "✓ Backend built successfully" -ForegroundColor Green
+Write-Host "Backend built successfully" -ForegroundColor Green
 
 # Build Test Runner
 Write-Host "Building test runner..." -ForegroundColor Cyan
 Remove-ExistingImage "codelens-test-runner:latest"
 docker build -t codelens-test-runner:latest ./test-runner
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "✗ Test runner build failed" -ForegroundColor Red
-    Read-Host "Press Enter to exit"
+    Write-Host "Test runner build failed" -ForegroundColor Red
     exit 1
 }
-Write-Host "✓ Test runner built successfully" -ForegroundColor Green
+Write-Host "Test runner built successfully" -ForegroundColor Green
 
 Write-Host ""
-Write-Host "✓ All images built successfully!" -ForegroundColor Green
+Write-Host "All images built successfully!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Cyan
 Write-Host "  Local development: .\scripts\local.ps1" -ForegroundColor White
 Write-Host "  Deploy to GCP:     .\scripts\deploy.ps1" -ForegroundColor White
 Write-Host ""
-Read-Host "Press Enter to continue"
