@@ -6,6 +6,9 @@ export const useWebSocketStore = defineStore('websocket', () => {
   const error = ref<string | null>(null)
   const messageHandlers = ref<((data: ResponseMessage) => void)[]>([])
   const initialized = ref(false)
+  const reconnectAttempts = ref(0)
+  const maxReconnectAttempts = 5
+  const reconnectDelay = 3000
 
   const getConnectionStatus = computed(() => isConnected.value)
   const getError = computed(() => error.value)
@@ -27,12 +30,26 @@ export const useWebSocketStore = defineStore('websocket', () => {
       socket.value.onopen = () => {
         isConnected.value = true
         error.value = null
+        reconnectAttempts.value = 0
         console.warn('WebSocket connected')
       }
 
       socket.value.onmessage = (event) => {
         try {
           const data: ResponseMessage = JSON.parse(event.data)
+
+          // Handle ping messages
+          if (data.type === 'ping') {
+            // Send pong response
+            const pongMessage = {
+              type: 'pong',
+              timestamp: Date.now(),
+            }
+            socket.value?.send(JSON.stringify(pongMessage))
+
+            return
+          }
+
           messageHandlers.value.forEach(handler => handler(data))
         }
         catch (e) {
@@ -49,13 +66,23 @@ export const useWebSocketStore = defineStore('websocket', () => {
       socket.value.onclose = () => {
         isConnected.value = false
         socket.value = null
-        messageHandlers.value = []
         console.warn('WebSocket disconnected')
 
         if (import.meta.client) {
           const { showConnectionError } = useSnackbar()
           showConnectionError()
+
+          // Attempt to reconnect
+          if (reconnectAttempts.value < maxReconnectAttempts) {
+            reconnectAttempts.value++
+            console.warn(`Attempting to reconnect... (${reconnectAttempts.value}/${maxReconnectAttempts})`)
+            setTimeout(() => {
+              connect()
+            }, reconnectDelay * reconnectAttempts.value)
+          }
         }
+
+        messageHandlers.value = []
       }
     }
     catch (e: any) {

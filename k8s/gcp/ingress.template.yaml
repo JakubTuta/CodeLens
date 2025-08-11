@@ -7,6 +7,20 @@ metadata:
     kubernetes.io/ingress.global-static-ip-name: "codelens-ip"
     networking.gke.io/managed-certificates: "codelens-ssl-cert"
     kubernetes.io/ingress.allow-http: "false"
+    cloud.google.com/backend-config: '{"default": "websocket-backend-config"}'
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/server-snippets: |
+      location /ws {
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+      }
 spec:
   rules:
   - host: {{DOMAIN}}
@@ -49,3 +63,12 @@ spec:
     - {{DOMAIN}}
     - www.{{DOMAIN}}
     - api.{{DOMAIN}}
+---
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: websocket-backend-config
+spec:
+  timeoutSec: 3600
+  connectionDraining:
+    drainingTimeoutSec: 60

@@ -1,4 +1,3 @@
-# Stage 1: Build Stage
 FROM node:24 AS builder
 
 WORKDIR /app

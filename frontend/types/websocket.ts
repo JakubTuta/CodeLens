@@ -10,8 +10,10 @@ export type ResponseMessageTypes
     | 'ai_test_result'
     | 'verify_code_result'
     | 'test_result_update'
+    | 'ping'
+    | 'pong'
 
-export type RequestMessageTypes = 'generate_tests' | 'generate_docs' | 'generate_improvements' | 'test_ai' | 'verify_code'
+export type RequestMessageTypes = 'generate_tests' | 'generate_docs' | 'generate_improvements' | 'test_ai' | 'verify_code' | 'pong'
 
 export type SupportedLanguages = 'python'
 
@@ -45,7 +47,7 @@ export interface Test {
 }
 
 export interface ResponseMessage {
-  id: string
+  id?: string
   type: ResponseMessageTypes
 
   // Error message or general message
@@ -70,6 +72,9 @@ export interface ResponseMessage {
 
   // Individual test result update
   test_result?: Test
+
+  // Ping/Pong timestamp
+  timestamp?: number
 }
 
 export const MESSAGE_TYPES = {

@@ -193,7 +193,6 @@ onUnmounted(() => {
           :code="documentation"
           title="Documentation"
           copyable
-          max-height="400px"
         />
 
         <!-- Otherwise use regular text display -->
@@ -239,6 +238,12 @@ onUnmounted(() => {
   line-height: 1.6;
   white-space: pre-wrap;
   word-wrap: break-word;
+  padding: 1rem;
+  background: rgb(var(--v-theme-grey-darken-4));
+  border-radius: 8px;
+  color: #e8eaed;
+  font-family: 'Fira Code', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+  font-size: 0.875rem;
 }
 
 .disabled-card {

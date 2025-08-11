@@ -6,7 +6,7 @@ metadata:
     app: codelens
     component: backend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: codelens
@@ -26,13 +26,17 @@ spec:
           env:
             - name: CORS_ORIGINS
               value: "https://{{DOMAIN}},https://www.{{DOMAIN}},http://localhost:3000"
+            - name: WEBSOCKET_PING_INTERVAL
+              value: "30"
+            - name: WEBSOCKET_TIMEOUT
+              value: "3600"
           resources:
             requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
               memory: "256Mi"
               cpu: "250m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
 ---
 apiVersion: v1
 kind: Service
@@ -41,6 +45,8 @@ metadata:
   labels:
     app: codelens
     component: backend
+  annotations:
+    cloud.google.com/backend-config: '{"default": "websocket-backend-config"}'
 spec:
   selector:
     app: codelens
@@ -50,22 +56,3 @@ spec:
       port: 8000
       targetPort: 8000
   type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: codelens-backend-external
-  labels:
-    app: codelens
-    component: backend
-  annotations:
-    cloud.google.com/neg: '{"ingress": true}'
-spec:
-  selector:
-    app: codelens
-    component: backend
-  ports:
-    - protocol: TCP
-      port: 8000
-      targetPort: 8000
-  type: LoadBalancer

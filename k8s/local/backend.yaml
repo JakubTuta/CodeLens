@@ -20,7 +20,7 @@ spec:
       containers:
         - name: backend
           image: codelens-backend:latest
-          imagePullPolicy: IfNotPresent  # Try local first, then pull if needed
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           env:
