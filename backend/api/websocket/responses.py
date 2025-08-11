@@ -1,6 +1,5 @@
 import fastapi
-
-from . import utils
+from utils import websocket_utils as utils
 
 
 async def send_error_response(

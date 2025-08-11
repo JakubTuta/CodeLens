@@ -3,8 +3,10 @@ import logging
 import typing
 
 import fastapi
-
-from . import create_tests, models, responses, test_runner_client, utils
+from api.websocket import responses
+from models import websocket as models
+from services import test_generation, test_runner
+from utils import websocket_utils as utils
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +14,9 @@ logger = logging.getLogger(__name__)
 class TestGeneratorManager:
     def __init__(self):
         self.generators = {
-            "unit": create_tests.UnitTest(),
-            "memory": create_tests.MemoryTest(),
-            "performance": create_tests.PerformanceTest(),
+            "unit": test_generation.UnitTest(),
+            "memory": test_generation.MemoryTest(),
+            "performance": test_generation.PerformanceTest(),
         }
 
         self.response_types: dict[str, models.response_message_types] = {
@@ -54,9 +56,7 @@ class TestGeneratorManager:
             await utils.send_response_message(websocket, response_message)
             logger.info(f"Sent {test_type} tests with pending status to client")
 
-            def handle_test_result_sync(
-                test_id: str, result: test_runner_client.TestResult
-            ):
+            def handle_test_result_sync(test_id: str, result: test_runner.TestResult):
                 completed_test = None
                 for test in tests:
                     if test.id == test_id:
@@ -106,7 +106,7 @@ class TestGeneratorManager:
             await utils.send_response_message(websocket, response_message)
             logger.info(f"Sent {test_type} tests with running status to client")
 
-            await test_runner_client.test_runner_client.execute_tests_streaming(
+            await test_runner.test_runner_client.execute_tests_streaming(
                 tests, handle_test_result_sync
             )
 

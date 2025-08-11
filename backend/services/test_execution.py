@@ -2,8 +2,10 @@ import logging
 from typing import List
 
 import fastapi
-
-from . import models, responses, test_runner_client, utils
+from api.websocket import responses
+from models import websocket as models
+from services import test_runner
+from utils import websocket_utils as utils
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,7 @@ async def handle_run_tests_message(websocket: fastapi.WebSocket, message: dict):
 
         logger.info(f"Running {len(tests)} tests for message {message_id}")
 
-        test_results = await test_runner_client.test_runner_client.execute_tests(tests)
+        test_results = await test_runner.test_runner_client.execute_tests(tests)
 
         for i, test in enumerate(tests):
             if i < len(test_results):

@@ -6,9 +6,8 @@ from typing import Callable, List, Optional
 
 import pydantic
 import websockets
+from models.websocket import Test
 from websockets.exceptions import ConnectionClosed, InvalidURI
-
-from .models import Test
 
 TEST_RUNNER_URL = "ws://codelens-test-runner:8001/ws"
 CONNECTION_TIMEOUT = 60

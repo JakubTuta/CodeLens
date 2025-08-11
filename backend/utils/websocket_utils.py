@@ -2,8 +2,7 @@ import typing
 
 import fastapi
 import pydantic
-
-from . import models
+from models import websocket as models
 
 
 async def send_error_message(websocket: fastapi.WebSocket, error_message: str):
