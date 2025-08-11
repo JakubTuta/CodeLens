@@ -342,6 +342,53 @@ const benefits = [
       </v-row>
     </v-container>
 
+    <!-- Source Code Section -->
+    <v-container class="py-16">
+      <v-row justify="center">
+        <v-col
+          cols="12"
+          md="8"
+        >
+          <v-card
+            class="source-card pa-8 text-center"
+            variant="outlined"
+            color="surface-variant"
+          >
+            <v-icon
+              icon="mdi-github"
+              size="64"
+              color="primary"
+              class="mb-4"
+            />
+
+            <h2 class="text-h4 mb-4">
+              Open Source
+            </h2>
+
+            <p class="text-h6 text-medium-emphasis mb-6">
+              CodeLens is completely open source. Explore the code, contribute to the project, or fork it for your own use.
+            </p>
+
+            <v-btn
+              size="large"
+              color="primary"
+              variant="flat"
+              href="https://github.com/JakubTuta/CodeLens"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="source-button"
+            >
+              <v-icon
+                start
+                icon="mdi-github"
+              />
+              View Source Code
+            </v-btn>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+
     <!-- Navigation Section -->
     <v-divider class="my-6" />
 
@@ -445,6 +492,27 @@ const benefits = [
   transform: translateY(-8px);
   /* Use a slightly stronger shadow on hover */
   box-shadow: 0 12px 32px rgba(var(--v-theme-shadow-color), 0.15) !important;
+}
+
+.source-card {
+  transition: all 0.3s ease-in-out;
+  border: 2px solid rgba(var(--v-theme-primary), 0.2);
+}
+
+.source-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(var(--v-theme-primary), 0.4);
+  box-shadow: 0 8px 24px rgba(var(--v-theme-primary), 0.2) !important;
+}
+
+.source-button {
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(var(--v-theme-primary), 0.3) !important;
+}
+
+.source-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(var(--v-theme-primary), 0.4) !important;
 }
 
 /* Define a theme-aware shadow color variable */
