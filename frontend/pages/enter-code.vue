@@ -36,7 +36,7 @@ onMounted(() => {
       }
       else {
         alertType.value = 'error'
-        alertMessage.value = data.error_message || 'Code validation failed'
+        alertMessage.value = data.error_message || 'Code validation failed. Please check your function and try again.'
       }
       showAlert.value = true
     }
@@ -197,7 +197,7 @@ watch(generateImprovements, (newValue) => {
                     </template>
 
                     <v-list-item-title class="text-body-2">
-                      Paste or write only one function
+                      Exactly one function (no more, no less)
                     </v-list-item-title>
                   </v-list-item>
 
@@ -209,7 +209,31 @@ watch(generateImprovements, (newValue) => {
                     </template>
 
                     <v-list-item-title class="text-body-2">
-                      Include function definition and body
+                      Maximum 150 lines of code
+                    </v-list-item-title>
+                  </v-list-item>
+
+                  <v-list-item>
+                    <template #prepend>
+                      <v-icon color="success">
+                        mdi-check-circle
+                      </v-icon>
+                    </template>
+
+                    <v-list-item-title class="text-body-2">
+                      Imports and global variables allowed
+                    </v-list-item-title>
+                  </v-list-item>
+
+                  <v-list-item>
+                    <template #prepend>
+                      <v-icon color="error">
+                        mdi-close-circle
+                      </v-icon>
+                    </template>
+
+                    <v-list-item-title class="text-body-2">
+                      No classes allowed
                     </v-list-item-title>
                   </v-list-item>
                 </v-list>

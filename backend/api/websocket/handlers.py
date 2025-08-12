@@ -48,8 +48,16 @@ async def handle_verify_code_message(websocket: fastapi.WebSocket, message: dict
         await responses.send_no_code_provided_error(websocket)
         return
 
-    if not function_utils.validate_single_function(code):
-        await responses.send_invalid_code_format_error(websocket)
+    is_valid, error_message = function_utils.validate_single_function_with_errors(code)
+
+    if not is_valid:
+        response_message = utils.prepare_response_message(
+            message_type="verify_code_result",
+            message_id=message.get("id", ""),
+            is_ok=False,
+            error_message=error_message,
+        )
+        await utils.send_response_message(websocket, response_message)
         return
 
     response_message = utils.prepare_response_message(
