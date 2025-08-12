@@ -24,7 +24,6 @@ SIMPLE_TYPE_STRATEGIES = {
     ),
 }
 
-# Extended type strategies for common Python libraries
 LIBRARY_TYPE_STRATEGIES = {
     "re.Pattern": hypothesis.strategies.text().map(lambda x: re.compile(r"\w*")),
     "numpy.ndarray": hypothesis.strategies.lists(
@@ -40,6 +39,32 @@ LIBRARY_TYPE_STRATEGIES = {
         min_size=1,
         max_size=3,
     ),
+    "pandas.Series": hypothesis.strategies.lists(
+        hypothesis.strategies.integers(), min_size=1, max_size=10
+    ),
+    "requests.Response": hypothesis.strategies.just(None),  # Mock response object
+    "tensorflow.Tensor": hypothesis.strategies.lists(
+        hypothesis.strategies.floats(allow_nan=False, allow_infinity=False),
+        min_size=1,
+        max_size=10,
+    ),
+    "torch.Tensor": hypothesis.strategies.lists(
+        hypothesis.strategies.floats(allow_nan=False, allow_infinity=False),
+        min_size=1,
+        max_size=10,
+    ),
+    # Common numpy dtypes
+    "numpy.float32": hypothesis.strategies.floats(
+        allow_nan=False, allow_infinity=False
+    ),
+    "numpy.float64": hypothesis.strategies.floats(
+        allow_nan=False, allow_infinity=False
+    ),
+    "numpy.int32": hypothesis.strategies.integers(),
+    "numpy.int64": hypothesis.strategies.integers(),
+    # Matplotlib figure types
+    "matplotlib.pyplot.Figure": hypothesis.strategies.just(None),
+    "matplotlib.figure.Figure": hypothesis.strategies.just(None),
 }
 
 
@@ -47,7 +72,6 @@ def type_to_strategy(type_hint: typing.Any) -> hypothesis.strategies.SearchStrat
     if type_hint in SIMPLE_TYPE_STRATEGIES:
         return SIMPLE_TYPE_STRATEGIES[type_hint]
 
-    # Handle string representations of types (for libraries)
     if isinstance(type_hint, str) and type_hint in LIBRARY_TYPE_STRATEGIES:
         return LIBRARY_TYPE_STRATEGIES[type_hint]
 
@@ -101,7 +125,6 @@ def type_to_strategy(type_hint: typing.Any) -> hypothesis.strategies.SearchStrat
             )
             return hypothesis.strategies.sets(element_strategy, min_size=0, max_size=5)
 
-    # Handle datetime types
     if type_hint == datetime.datetime:
         return hypothesis.strategies.datetimes()
     elif type_hint == datetime.date:
@@ -111,7 +134,6 @@ def type_to_strategy(type_hint: typing.Any) -> hypothesis.strategies.SearchStrat
     elif type_hint == datetime.timedelta:
         return hypothesis.strategies.timedeltas()
 
-    # Handle Path objects
     if type_hint == Path:
         return hypothesis.strategies.text().map(
             lambda x: Path(x.replace("/", "_").replace("\\", "_"))
@@ -191,11 +213,9 @@ def is_standard_python_type(type_hint: typing.Any) -> bool:
     if type_hint in SIMPLE_TYPE_STRATEGIES:
         return True
 
-    # Check for common library types
     if isinstance(type_hint, str) and type_hint in LIBRARY_TYPE_STRATEGIES:
         return True
 
-    # Check for datetime types
     if type_hint in {
         datetime.datetime,
         datetime.date,
@@ -204,7 +224,6 @@ def is_standard_python_type(type_hint: typing.Any) -> bool:
     }:
         return True
 
-    # Check for Path type
     if type_hint == Path:
         return True
 
@@ -241,9 +260,16 @@ def detect_library_usage(function_code: str) -> set:
     """Detect which libraries are used in the function code."""
     libraries = set()
 
-    # Common library patterns
     library_patterns = {
-        "numpy": ["numpy", "np.", "import numpy", "from numpy"],
+        "numpy": [
+            "numpy",
+            "np.",
+            "import numpy",
+            "from numpy",
+            "ndarray",
+            "np.array",
+            "np.ndarray",
+        ],
         "pandas": [
             "pandas",
             "pd.",
@@ -251,13 +277,15 @@ def detect_library_usage(function_code: str) -> set:
             "from pandas",
             "DataFrame",
             "Series",
+            "pd.DataFrame",
+            "pd.Series",
         ],
         "datetime": ["datetime", "date", "time", "timedelta"],
         "json": ["json.", "import json", "from json"],
-        "requests": ["requests.", "import requests", "from requests"],
+        "requests": ["requests.", "import requests", "from requests", "Response"],
         "os": ["os.", "import os", "from os"],
-        "pathlib": ["pathlib", "Path(", "import pathlib", "from pathlib"],
-        "regex": ["re.", "import re", "from re", "regex", "pattern"],
+        "pathlib": ["pathlib", "Path(", "import pathlib", "from pathlib", "Path"],
+        "regex": ["re.", "import re", "from re", "regex", "pattern", "Pattern"],
         "threading": ["threading", "Thread(", "import threading"],
         "asyncio": ["asyncio", "async ", "await ", "import asyncio"],
         "math": ["math.", "import math", "from math"],
@@ -271,6 +299,11 @@ def detect_library_usage(function_code: str) -> set:
         "xml": ["xml.", "import xml", "from xml", "ElementTree"],
         "unittest": ["unittest.", "import unittest", "from unittest"],
         "logging": ["logging.", "import logging", "from logging"],
+        "matplotlib": ["matplotlib", "plt.", "import matplotlib", "pyplot", "Figure"],
+        "scipy": ["scipy", "import scipy", "from scipy"],
+        "sklearn": ["sklearn", "import sklearn", "from sklearn"],
+        "tensorflow": ["tensorflow", "tf.", "import tensorflow", "Tensor", "tf.Tensor"],
+        "torch": ["torch", "import torch", "from torch", "torch.Tensor"],
     }
 
     for library, patterns in library_patterns.items():
@@ -314,8 +347,44 @@ def generate_sample_data_for_type(param_type: typing.Any) -> str:
         return "datetime.timedelta(days=1, hours=2)"
     elif param_type == Path:
         return "Path('test_path.txt')"
-    else:
-        return "None"
+    # Handle third-party library types
+    elif hasattr(param_type, "__name__"):
+        type_name = param_type.__name__
+        if "ndarray" in type_name.lower():
+            return "np.array([1, 2, 3, 4, 5])"
+        elif "dataframe" in type_name.lower():
+            return "pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]})"
+        elif "series" in type_name.lower():
+            return "pd.Series([1, 2, 3, 4, 5])"
+        elif "response" in type_name.lower():
+            return "requests.get('https://httpbin.org/get')"
+        elif "tensor" in type_name.lower():
+            if "torch" in str(param_type):
+                return "torch.tensor([1, 2, 3, 4, 5])"
+            else:
+                return "tf.constant([1, 2, 3, 4, 5])"
+        elif "figure" in type_name.lower():
+            return "plt.figure()"
+        elif "pattern" in type_name.lower():
+            return "re.compile(r'\\d+')"
+    # Handle string type annotations (for when actual types aren't available)
+    elif isinstance(param_type, str):
+        if "ndarray" in param_type.lower():
+            return "np.array([1, 2, 3, 4, 5])"
+        elif "dataframe" in param_type.lower():
+            return "pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]})"
+        elif "series" in param_type.lower():
+            return "pd.Series([1, 2, 3, 4, 5])"
+        elif "response" in param_type.lower():
+            return "requests.get('https://httpbin.org/get')"
+        elif "tensor" in param_type.lower():
+            return "torch.tensor([1, 2, 3, 4, 5])"
+        elif "figure" in param_type.lower():
+            return "plt.figure()"
+        elif "pattern" in param_type.lower():
+            return "re.compile(r'\\d+')"
+
+    return "None"
 
 
 def get_library_specific_imports(libraries: set) -> list:

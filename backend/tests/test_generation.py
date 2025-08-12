@@ -605,7 +605,6 @@ class NumPyTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function code contains numpy usage
         if "numpy" not in function_code and "np." not in function_code:
             return ""
 
@@ -673,7 +672,6 @@ class DateTimeTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function code contains datetime usage
         if "datetime" not in function_code and "date" not in function_code.lower():
             return ""
 
@@ -730,7 +728,6 @@ class JsonTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function code contains json usage
         if "json" not in function_code:
             return ""
 
@@ -782,7 +779,6 @@ class RequestsTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function code contains requests usage
         if "requests" not in function_code and "http" not in function_code.lower():
             return ""
 
@@ -848,7 +844,6 @@ class FileOperationsTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function code contains file operations
         file_keywords = ["open(", "file", "read", "write", "path", "os.", "pathlib"]
         if not any(keyword in function_code for keyword in file_keywords):
             return ""
@@ -918,7 +913,6 @@ class RegexTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function code contains regex usage
         if (
             "re." not in function_code
             and "regex" not in function_code
@@ -1021,7 +1015,6 @@ class ExceptionHandlingTestGenerator(BaseTestGenerator):
                 )
 
         if not test_cases:
-            # Generic exception tests
             test_cases = [
                 f"        # Test exception handling with invalid input",
                 f"        try:",
@@ -1058,7 +1051,6 @@ class ConcurrencyTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function is async or mentions threading/concurrency
         if (
             "async " not in function_code
             and "await " not in function_code
@@ -1075,7 +1067,6 @@ class ConcurrencyTestGenerator(BaseTestGenerator):
             "import pytest",
         ]
 
-        # Generate sample parameters
         sample_params = []
         for param_name, param_info in filtered_sig_info["parameters"].items():
             param_type = param_info["type"]
@@ -1143,7 +1134,6 @@ class MathLibraryTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function code contains math library usage
         if "math." not in function_code and "import math" not in function_code:
             return ""
 
@@ -1197,7 +1187,6 @@ class CollectionsTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function code contains collections usage
         if (
             "collections." not in function_code
             and "import collections" not in function_code
@@ -1259,7 +1248,6 @@ class IterToolsTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function code contains itertools usage
         if (
             "itertools." not in function_code
             and "import itertools" not in function_code
@@ -1319,7 +1307,6 @@ class FuncToolsTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function code contains functools usage
         if (
             "functools." not in function_code
             and "import functools" not in function_code
@@ -1375,7 +1362,6 @@ class UrlLibTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function code contains urllib usage
         if "urllib." not in function_code and "import urllib" not in function_code:
             return ""
 
@@ -1437,7 +1423,6 @@ class LoggingTestGenerator(BaseTestGenerator):
         function_code: str,
         sig_info: dict,
     ) -> str:
-        # Check if function code contains logging usage
         if "logging." not in function_code and "import logging" not in function_code:
             return ""
 
