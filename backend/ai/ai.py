@@ -2,7 +2,7 @@ import re
 import typing
 
 import anthropic
-import websocket.models as models
+import models.websocket as models
 from google import genai
 from google.genai import types as genai_types
 
