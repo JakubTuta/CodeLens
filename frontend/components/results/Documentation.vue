@@ -19,6 +19,7 @@ const showApiKeyError = ref(false)
 const hasDocumentation = computed(() => documentation.value.trim() !== '')
 const hasCode = computed(() => !!code)
 const hasValidApiKey = computed(() => hasApiKey() && apiKey.value.trim() !== '')
+const shouldShowApiKeyAlert = computed(() => !hasValidApiKey.value && generateDocumentation.value)
 
 const containsCode = computed(() => {
   return documentation.value.includes('```')
@@ -35,8 +36,6 @@ function sendDocsRequest() {
   }
 
   if (!hasValidApiKey.value) {
-    showApiKeyError.value = true
-
     return
   }
 
@@ -49,7 +48,6 @@ function sendDocsRequest() {
   webSocketStore.sendMessage(message)
   messageSent.value = true
   isLoading.value = true
-  showApiKeyError.value = false
 }
 
 function handleMessage(message: ResponseMessage) {
@@ -172,7 +170,7 @@ onUnmounted(() => {
     <div v-else>
       <!-- API Key Error -->
       <v-alert
-        v-if="showApiKeyError"
+        v-if="shouldShowApiKeyAlert || showApiKeyError"
         type="warning"
         variant="tonal"
         class="mb-4"

@@ -19,6 +19,7 @@ const showApiKeyError = ref(false)
 const hasImprovements = computed(() => improvements.value.length > 0)
 const hasCode = computed(() => !!code)
 const hasValidApiKey = computed(() => hasApiKey() && apiKey.value.trim() !== '')
+const shouldShowApiKeyAlert = computed(() => !hasValidApiKey.value && generateImprovements.value)
 
 function sendImprovementsRequest() {
   if (!generateImprovements.value || !code || !code.value.trim() || messageSent.value) {
@@ -26,8 +27,6 @@ function sendImprovementsRequest() {
   }
 
   if (!hasValidApiKey.value) {
-    showApiKeyError.value = true
-
     return
   }
 
@@ -40,7 +39,6 @@ function sendImprovementsRequest() {
   webSocketStore.sendMessage(message)
   messageSent.value = true
   isLoading.value = true
-  showApiKeyError.value = false
 }
 
 function handleMessage(message: ResponseMessage) {
@@ -163,7 +161,7 @@ onUnmounted(() => {
     <div v-else>
       <!-- API Key Error -->
       <v-alert
-        v-if="showApiKeyError"
+        v-if="shouldShowApiKeyAlert || showApiKeyError"
         type="warning"
         variant="tonal"
         class="mb-4"
