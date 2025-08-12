@@ -1,15 +1,16 @@
 import asyncio
 import json
 import logging
+import os
+import typing
 import uuid
-from typing import Callable, List, Optional
 
+import models.websocket
 import pydantic
 import websockets
-from models.websocket import Test
-from websockets.exceptions import ConnectionClosed, InvalidURI
+import websockets.exceptions
 
-TEST_RUNNER_URL = "ws://codelens-test-runner:8001/ws"
+TEST_RUNNER_URL = os.getenv("TEST_RUNNER_URL", "ws://localhost:8001/ws")
 CONNECTION_TIMEOUT = 60
 EXECUTION_TIMEOUT = 300
 
@@ -17,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class TestRequest(pydantic.BaseModel):
+    """Model for test request data."""
+
     id: str
     type: str
     name: str
@@ -25,37 +28,49 @@ class TestRequest(pydantic.BaseModel):
 
 
 class TestMessage(pydantic.BaseModel):
+    """Model for test message containing multiple tests."""
+
     message_id: str
-    tests: List[TestRequest]
+    tests: typing.List[TestRequest]
 
 
 class TestResult(pydantic.BaseModel):
+    """Model for individual test result."""
+
     test_id: str
     success: bool
     output: str
-    error: Optional[str] = None
-    execution_time: Optional[float] = None
+    error: typing.Optional[str] = None
+    execution_time: typing.Optional[float] = None
 
 
 class TestResponse(pydantic.BaseModel):
+    """Model for test response containing multiple results."""
+
     message_id: str
-    results: List[TestResult]
+    results: typing.List[TestResult]
 
 
 class IndividualTestResult(pydantic.BaseModel):
+    """Model for individual streaming test result."""
+
     message_id: str
     test_result: TestResult
 
 
 class TestRunnerClient:
+    """Client for communicating with the test runner service."""
+
     def __init__(self):
         self.test_runner_url = TEST_RUNNER_URL
         self.connection_timeout = CONNECTION_TIMEOUT
         self.execution_timeout = EXECUTION_TIMEOUT
 
-    async def execute_tests(self, tests: List[Test]) -> List[TestResult]:
+    async def execute_tests(
+        self, tests: typing.List[models.websocket.Test]
+    ) -> typing.List[TestResult]:
         """
-        Execute tests using the test-runner service (legacy method for backwards compatibility)
+        Execute tests using the test-runner service.
 
         Args:
             tests: List of Test objects to execute
@@ -80,7 +95,6 @@ class TestRunnerClient:
             test_message = TestMessage(message_id=message_id, tests=test_requests)
 
             results = await self._send_and_receive(test_message)
-
             return results
 
         except Exception as e:
@@ -98,15 +112,16 @@ class TestRunnerClient:
             return error_results
 
     async def execute_tests_streaming(
-        self, tests: List[Test], result_callback: Callable[[str, TestResult], None]
+        self,
+        tests: typing.List[models.websocket.Test],
+        result_callback: typing.Callable[[str, TestResult], None],
     ) -> None:
         """
-        Execute tests using the test-runner service with streaming results
+        Execute tests using the test-runner service with streaming results.
 
         Args:
             tests: List of Test objects to execute
             result_callback: Callback function to call when each test completes
-                             Parameters: (test_id, TestResult)
         """
         try:
             test_requests = []
@@ -140,9 +155,9 @@ class TestRunnerClient:
     async def _send_and_receive_streaming(
         self,
         test_message: TestMessage,
-        result_callback: Callable[[str, TestResult], None],
+        result_callback: typing.Callable[[str, TestResult], None],
     ) -> None:
-        """Send test message to test-runner and handle streaming responses"""
+        """Send test message to test-runner and handle streaming responses."""
         max_retries = 3
         retry_delay = 2
 
@@ -221,7 +236,11 @@ class TestRunnerClient:
                 if attempt == max_retries - 1:
                     raise Exception("Test execution timeout after all retries")
 
-            except (ConnectionClosed, InvalidURI, OSError) as e:
+            except (
+                websockets.exceptions.ConnectionClosed,
+                websockets.exceptions.InvalidURI,
+                OSError,
+            ) as e:
                 logger.error(
                     f"WebSocket connection error on attempt {attempt + 1}: {e}"
                 )
@@ -247,8 +266,10 @@ class TestRunnerClient:
 
         raise Exception("All connection attempts failed")
 
-    async def _send_and_receive(self, test_message: TestMessage) -> List[TestResult]:
-        """Send test message to test-runner and wait for response (legacy method)"""
+    async def _send_and_receive(
+        self, test_message: TestMessage
+    ) -> typing.List[TestResult]:
+        """Send test message to test-runner and wait for response."""
         max_retries = 3
         retry_delay = 2
 
@@ -297,7 +318,11 @@ class TestRunnerClient:
                 if attempt == max_retries - 1:
                     raise Exception("Test execution timeout after all retries")
 
-            except (ConnectionClosed, InvalidURI, OSError) as e:
+            except (
+                websockets.exceptions.ConnectionClosed,
+                websockets.exceptions.InvalidURI,
+                OSError,
+            ) as e:
                 logger.error(
                     f"WebSocket connection error on attempt {attempt + 1}: {e}"
                 )
@@ -324,4 +349,5 @@ class TestRunnerClient:
         raise Exception("All connection attempts failed")
 
 
+# Global instance
 test_runner_client = TestRunnerClient()

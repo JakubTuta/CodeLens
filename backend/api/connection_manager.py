@@ -1,5 +1,5 @@
 import fastapi
-from models import websocket as models
+import models.websocket as models
 
 
 class ConnectionManager:

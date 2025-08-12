@@ -82,11 +82,21 @@ kubectl delete -f k8s/gcp/
 - Backend CORS: `http://codelens-frontend:3000,http://localhost:3000`
 - Frontend API URL: `http://codelens-backend:8000`
 - WebSocket URL: `ws://codelens-backend:8000`
+- Test Runner URL: `ws://localhost:8001/ws`
 
 ### GCP Production
 - Backend CORS: `https://codelens.online,http://localhost:3000`
 - Frontend API URL: `https://api.codelens.online`
 - WebSocket URL: `wss://api.codelens.online`
+- Test Runner URL: `ws://codelens-test-runner:8001/ws`
+
+### Backend Environment Variables
+- **CORS_ORIGINS**: Comma-separated list of allowed CORS origins
+- **TEST_RUNNER_URL**: WebSocket URL for the test runner service
+  - Local: `ws://localhost:8001/ws` (for local development)
+  - Production: `ws://codelens-test-runner:8001/ws` (internal service name)
+- **WEBSOCKET_PING_INTERVAL**: WebSocket ping interval (GCP only)
+- **WEBSOCKET_TIMEOUT**: WebSocket timeout (GCP only)
 
 ## Migration Notes
 

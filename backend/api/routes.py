@@ -3,10 +3,13 @@ import json
 import logging
 import os
 
+import api.connection_manager as connection_manager
+import api.dependencies as dependencies
+import api.handlers as handlers
 import fastapi
-from api import connection_manager, dependencies, handlers
-from tests import test_execution
-from utils import websocket_utils as utils
+import tests.handlers.test_execution as test_execution
+import utils.function_utils as function_utils
+import utils.websocket_utils as utils
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

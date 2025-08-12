@@ -26,6 +26,8 @@ spec:
           env:
             - name: CORS_ORIGINS
               value: "http://codelens-frontend:3000,http://localhost:3000"
+            - name: TEST_RUNNER_URL
+              value: "ws://localhost:8001/ws"
 ---
 apiVersion: v1
 kind: Service

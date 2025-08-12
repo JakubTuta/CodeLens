@@ -1,7 +1,7 @@
-from api.connection_manager import ConnectionManager
+import api.connection_manager as connection_manager
 
-manager = ConnectionManager()
+manager = connection_manager.ConnectionManager()
 
 
-def get_connection_manager() -> ConnectionManager:
+def get_connection_manager() -> connection_manager.ConnectionManager:
     return manager

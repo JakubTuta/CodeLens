@@ -1,8 +1,8 @@
 import typing
 
 import fastapi
+import models.websocket as models
 import pydantic
-from models import websocket as models
 
 
 async def send_error_message(websocket: fastapi.WebSocket, error_message: str):
@@ -56,4 +56,5 @@ def prepare_response_message(
 async def send_response_message(
     websocket: typing.Any, response_message: models.ResponseMessage
 ) -> None:
+    await websocket.send_json(response_message.model_dump())
     await websocket.send_json(response_message.model_dump())

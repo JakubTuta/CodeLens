@@ -1,11 +1,12 @@
+import ai.ai as ai
+import api.responses as responses
+import api.validation as validation
 import fastapi
-from ai import ai
-from api import responses, validation
-from services import documentation_generation as create_docs
-from services import improvement_generation as create_improvements
-from tests import test_generation_service as test_generation
-from utils import function_utils
-from utils import websocket_utils as utils
+import services.documentation_generation as create_docs
+import services.improvement_generation as create_improvements
+import tests.handlers.test_generation_service as test_generation
+import utils.function_utils as function_utils
+import utils.websocket_utils as utils
 
 
 async def handle_test_ai_message(websocket: fastapi.WebSocket, message: dict):

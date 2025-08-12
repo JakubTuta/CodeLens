@@ -1,10 +1,10 @@
 import typing
 
+import ai.ai as ai
+import api.responses as responses
 import fastapi
-from ai import ai
-from api import responses
-from utils import function_utils
-from utils import websocket_utils as utils
+import utils.function_utils as function_utils
+import utils.websocket_utils as utils
 
 
 async def validate_code_and_get_function(

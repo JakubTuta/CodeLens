@@ -7,3 +7,8 @@ anthropic
 langchain
 langchain-core
 websockets>=11.0
+numpy
+pandas
+requests
+matplotlib
+scipy

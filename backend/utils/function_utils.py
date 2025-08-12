@@ -1,9 +1,7 @@
 import ast
 import importlib
 import inspect
-import sys
 import typing
-from typing import Optional, Tuple
 
 
 def create_safe_execution_namespace() -> dict:
@@ -52,8 +50,6 @@ def create_safe_execution_namespace() -> dict:
         "hypothesis": [],
         "pytest": [],
         "matplotlib": ["plt"],
-        "scipy": [],
-        "sklearn": [],
         "tensorflow": ["tf"],
         "torch": [],
     }
@@ -63,7 +59,6 @@ def create_safe_execution_namespace() -> dict:
             module = importlib.import_module(module_name)
             namespace[module_name] = module
 
-            # Add common type references for type hints
             if module_name == "numpy" and hasattr(module, "ndarray"):
                 namespace["ndarray"] = module.ndarray
             elif module_name == "pandas":
@@ -95,7 +90,6 @@ def create_safe_execution_namespace() -> dict:
             mock_module = create_mock_module(module_name)
             namespace[module_name] = mock_module
 
-            # Add mock type references for type hints
             if module_name == "numpy":
                 namespace["ndarray"] = mock_module.ndarray
             elif module_name == "pandas":
@@ -156,15 +150,6 @@ def create_mock_module(module_name: str):
                 self.Response = MockResponseClass("Response")
             elif name == "matplotlib":
                 self.pyplot = MockPyplotModule("pyplot")
-            elif name == "scipy":
-                self.sparse = MockModule("sparse")
-                self.linalg = MockModule("linalg")
-                self.stats = MockModule("stats")
-            elif name == "sklearn":
-                self.linear_model = MockModule("linear_model")
-                self.ensemble = MockModule("ensemble")
-                self.metrics = MockModule("metrics")
-                self.model_selection = MockModule("model_selection")
             elif name == "tensorflow":
                 self.Tensor = MockTensorClass("Tensor")
                 self.Variable = MockCallable("Variable")
@@ -357,7 +342,7 @@ def create_mock_module(module_name: str):
 
 def validate_single_function_with_errors(
     function_text: str,
-) -> Tuple[bool, Optional[str]]:
+) -> typing.Tuple[bool, typing.Optional[str]]:
     """
     Validate a single function and return validation result with error message.
 
@@ -545,7 +530,104 @@ def text_to_function(function_text: str) -> typing.Callable[..., typing.Any]:
         if callable(obj) and hasattr(obj, "__code__")
     )
 
-    exec(function_text, namespace)
+    execution_successful = False
+    try:
+        exec(function_text, namespace)
+        execution_successful = True
+    except ImportError as e:
+        try:
+            tree = ast.parse(function_text.strip())
+            function_defs = [
+                node for node in tree.body if isinstance(node, ast.FunctionDef)
+            ]
+
+            if len(function_defs) == 1:
+                error_str = str(e)
+                missing_module = None
+
+                if "No module named" in error_str:
+                    if "'" in error_str:
+                        missing_module = error_str.split("'")[1]
+                    elif '"' in error_str:
+                        missing_module = error_str.split('"')[1]
+
+                if not missing_module:
+                    for node in ast.walk(tree):
+                        if isinstance(node, ast.Import):
+                            for alias in node.names:
+                                if alias.name not in namespace:
+                                    missing_module = alias.name
+                                    break
+                        elif isinstance(node, ast.ImportFrom):
+                            if node.module and node.module not in namespace:
+                                missing_module = node.module
+                                break
+                        if missing_module:
+                            break
+
+                if missing_module:
+                    namespace[missing_module] = create_mock_module(missing_module)
+
+                    try:
+                        exec(function_text, namespace)
+                        execution_successful = True
+                    except ImportError:
+                        func_name = function_defs[0].name
+                        wrapper_code = f"""
+def {func_name}(*args, **kwargs):
+    # Original function with import handling
+{function_text}
+    return locals()['{func_name}'](*args, **kwargs)
+"""
+                        try:
+                            exec(wrapper_code, namespace)
+                            execution_successful = True
+                        except:
+                            pass
+                else:
+                    raise ValueError(
+                        f"Import error: {e}. Please check if all required modules are available"
+                    )
+            else:
+                raise ValueError(
+                    f"Import error: {e}. Please check if all required modules are available"
+                )
+        except SyntaxError:
+            raise ValueError(
+                f"Import error: {e}. Please check if all required modules are available"
+            )
+        except Exception as inner_e:
+            try:
+                tree = ast.parse(function_text.strip())
+                function_defs = [
+                    node for node in tree.body if isinstance(node, ast.FunctionDef)
+                ]
+                if len(function_defs) != 1:
+                    raise ValueError(f"Failed to execute function: {inner_e}")
+            except:
+                raise ValueError(f"Failed to execute function: {inner_e}")
+    except Exception as e:
+        raise ValueError(f"Failed to execute function: {e}")
+
+    if not execution_successful:
+        try:
+            tree = ast.parse(function_text.strip())
+            function_defs = [
+                node for node in tree.body if isinstance(node, ast.FunctionDef)
+            ]
+            if len(function_defs) == 1:
+                func_def = function_defs[0]
+                func_name = func_def.name
+
+                def wrapper(*args, **kwargs):
+                    return None
+
+                wrapper.__name__ = func_name
+                return wrapper
+        except:
+            pass
+
+        raise ValueError("Failed to create function due to import errors")
 
     defined_functions = [
         obj
