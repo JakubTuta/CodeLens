@@ -1,43 +1,9 @@
 # CodeLens - GCP Pause Script
 # Scales CodeLens deployments to zero to save costs
 
-param(
-    [switch]$Status
-)
-
 Write-Host "CodeLens - GCP Pause" -ForegroundColor Yellow
 Write-Host "===================" -ForegroundColor Yellow
 Write-Host ""
-
-if ($Status) {
-    Write-Host "CodeLens Status:" -ForegroundColor Cyan
-    Write-Host ""
-    
-    # Check if we can connect to any cluster
-    try {
-        kubectl cluster-info | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            throw "Cannot connect to cluster"
-        }
-    } catch {
-        Write-Host "[ERROR] Cannot connect to Kubernetes cluster." -ForegroundColor Red
-        Write-Host "  Make sure you're authenticated and have the correct context set." -ForegroundColor Yellow
-        exit 1
-    }
-    
-    Write-Host "Deployments:" -ForegroundColor Yellow
-    kubectl get deployments -l app=codelens -o wide
-    
-    Write-Host ""
-    Write-Host "Pods:" -ForegroundColor Yellow
-    kubectl get pods -l app=codelens
-    
-    Write-Host ""
-    Write-Host "Services:" -ForegroundColor Yellow
-    kubectl get services -l app=codelens
-    
-    exit 0
-}
 
 # Check if configuration files exist to extract values
 $configFiles = @(
@@ -207,89 +173,88 @@ Write-Host ""
 
 Write-Host "PAUSING CodeLens Application" -ForegroundColor Yellow
 Write-Host "============================" -ForegroundColor Yellow
-    Write-Host ""
-    
-    # Check if already paused
-    $pausedDeployments = 0
-    foreach ($deployment in $deployments) {
-        if ($currentStatus.ContainsKey($deployment) -and $currentStatus[$deployment] -eq 0) {
-            $pausedDeployments++
-        }
+Write-Host ""
+
+# Check if already paused
+$pausedDeployments = 0
+foreach ($deployment in $deployments) {
+    if ($currentStatus.ContainsKey($deployment) -and $currentStatus[$deployment] -eq 0) {
+        $pausedDeployments++
     }
-    
-    if ($pausedDeployments -eq $deployments.Count) {
-        Write-Host "All deployments are already paused (scaled to 0)!" -ForegroundColor Yellow
-        Write-Host ""
-        foreach ($deployment in $deployments) {
-            Write-Host "  $deployment`: 0 replicas" -ForegroundColor White
-        }
-        Write-Host ""
-        Write-Host "Your application is already saving costs." -ForegroundColor Green
-        exit 0
-    }
-    
-    Write-Host "This will scale your deployments to 0 replicas." -ForegroundColor Yellow
-    Write-Host "Benefits:" -ForegroundColor Green
-    Write-Host "  - Stops all running pods (saves compute costs)" -ForegroundColor White
-    Write-Host "  - Keeps all configuration intact" -ForegroundColor White
-    Write-Host "  - Maintains ingress, services, and SSL certificates" -ForegroundColor White
-    Write-Host "  - Can be easily resumed later" -ForegroundColor White
-    Write-Host ""
-    Write-Host "Your application will be inaccessible until resumed." -ForegroundColor Red
-    Write-Host ""
-    
-    $confirm = Read-Host "Continue with pause? (y/n)"
-    if ($confirm -ne "y" -and $confirm -ne "Y") {
-        Write-Host "Pause cancelled." -ForegroundColor Yellow
-        exit 0
-    }
-    
-    Write-Host ""
-    Write-Host "Scaling deployments to 0 replicas..." -ForegroundColor Yellow
-    
-    foreach ($deployment in $deployments) {
-        if ($currentStatus.ContainsKey($deployment)) {
-            Write-Host "  Scaling $deployment to 0..." -ForegroundColor Gray
-            kubectl scale deployment $deployment --replicas=0
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "    $deployment scaled down successfully" -ForegroundColor Green
-            } else {
-                Write-Host "    Warning: Failed to scale down $deployment" -ForegroundColor Yellow
-            }
-        } else {
-            Write-Host "    $deployment not found, skipping" -ForegroundColor Gray
-        }
-    }
-    
-    Write-Host ""
-    Write-Host "Waiting for pods to terminate..." -ForegroundColor Yellow
-    Start-Sleep -Seconds 10
-    
-    $remainingPods = kubectl get pods -l app=codelens --no-headers 2>$null
-    if ($remainingPods) {
-        Write-Host "Some pods are still terminating:" -ForegroundColor Yellow
-        Write-Host $remainingPods -ForegroundColor Gray
-        Write-Host "This is normal and they should terminate shortly." -ForegroundColor White
-    } else {
-        Write-Host "All pods have been terminated." -ForegroundColor Green
-    }
-    
-    Write-Host ""
-    Write-Host "Checking final status..." -ForegroundColor Yellow
-    kubectl get deployments -l app=codelens
-    
-    Write-Host ""
-    Write-Host "===============================" -ForegroundColor Green
-    Write-Host "CodeLens Application PAUSED!" -ForegroundColor Green
-    Write-Host "===============================" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "Cost savings:" -ForegroundColor Cyan
-    Write-Host "- No compute costs for pods" -ForegroundColor White
-    Write-Host "- Ingress and load balancer still active (minimal cost)" -ForegroundColor White
-    Write-Host "- SSL certificates maintained" -ForegroundColor White
-    Write-Host "- All configuration preserved" -ForegroundColor White
-    Write-Host ""
-    Write-Host "To resume your application later:" -ForegroundColor Yellow
-    Write-Host "  .\scripts\resume.ps1" -ForegroundColor White
-    Write-Host ""
 }
+
+if ($pausedDeployments -eq $deployments.Count) {
+    Write-Host "All deployments are already paused (scaled to 0)!" -ForegroundColor Yellow
+    Write-Host ""
+    foreach ($deployment in $deployments) {
+        Write-Host "  $deployment`: 0 replicas" -ForegroundColor White
+    }
+    Write-Host ""
+    Write-Host "Your application is already saving costs." -ForegroundColor Green
+    exit 0
+}
+
+Write-Host "This will scale your deployments to 0 replicas." -ForegroundColor Yellow
+Write-Host "Benefits:" -ForegroundColor Green
+Write-Host "  - Stops all running pods (saves compute costs)" -ForegroundColor White
+Write-Host "  - Keeps all configuration intact" -ForegroundColor White
+Write-Host "  - Maintains ingress, services, and SSL certificates" -ForegroundColor White
+Write-Host "  - Can be easily resumed later" -ForegroundColor White
+Write-Host ""
+Write-Host "Your application will be inaccessible until resumed." -ForegroundColor Red
+Write-Host ""
+
+$confirm = Read-Host "Continue with pause? (y/n)"
+if ($confirm -ne "y" -and $confirm -ne "Y") {
+    Write-Host "Pause cancelled." -ForegroundColor Yellow
+    exit 0
+}
+
+Write-Host ""
+Write-Host "Scaling deployments to 0 replicas..." -ForegroundColor Yellow
+
+foreach ($deployment in $deployments) {
+    if ($currentStatus.ContainsKey($deployment)) {
+        Write-Host "  Scaling $deployment to 0..." -ForegroundColor Gray
+        kubectl scale deployment $deployment --replicas=0
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "    $deployment scaled down successfully" -ForegroundColor Green
+        } else {
+            Write-Host "    Warning: Failed to scale down $deployment" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "    $deployment not found, skipping" -ForegroundColor Gray
+    }
+}
+
+Write-Host ""
+Write-Host "Waiting for pods to terminate..." -ForegroundColor Yellow
+Start-Sleep -Seconds 10
+
+$remainingPods = kubectl get pods -l app=codelens --no-headers 2>$null
+if ($remainingPods) {
+    Write-Host "Some pods are still terminating:" -ForegroundColor Yellow
+    Write-Host $remainingPods -ForegroundColor Gray
+    Write-Host "This is normal and they should terminate shortly." -ForegroundColor White
+} else {
+    Write-Host "All pods have been terminated." -ForegroundColor Green
+}
+
+Write-Host ""
+Write-Host "Checking final status..." -ForegroundColor Yellow
+kubectl get deployments -l app=codelens
+
+Write-Host ""
+Write-Host "===============================" -ForegroundColor Green
+Write-Host "CodeLens Application PAUSED!" -ForegroundColor Green
+Write-Host "===============================" -ForegroundColor Green
+Write-Host ""
+Write-Host "Cost savings:" -ForegroundColor Cyan
+Write-Host "- No compute costs for pods" -ForegroundColor White
+Write-Host "- Ingress and load balancer still active (minimal cost)" -ForegroundColor White
+Write-Host "- SSL certificates maintained" -ForegroundColor White
+Write-Host "- All configuration preserved" -ForegroundColor White
+Write-Host ""
+Write-Host "To resume your application later:" -ForegroundColor Yellow
+Write-Host "  .\scripts\resume.ps1" -ForegroundColor White
+Write-Host ""
