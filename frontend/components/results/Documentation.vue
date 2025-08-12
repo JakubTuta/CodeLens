@@ -4,18 +4,21 @@ import { MESSAGE_TYPES } from '~/types/websocket'
 import { createGenerateDocsMessage, generateMessageId } from '~/utils/websocket-helpers'
 
 const webSocketStore = useWebSocketStore()
-const { getGenerateDocumentation, setGenerateDocumentation, getCode, getLanguage } = useCookieStore()
+const { getGenerateDocumentation, setGenerateDocumentation, getCode, getLanguage, getApiKey, hasApiKey } = useCookieStore()
 
 const generateDocumentation = ref(getGenerateDocumentation())
 const code = getCode()
 const language = getLanguage()
+const apiKey = getApiKey()
 
 const isLoading = ref(false)
 const messageSent = ref(false)
 const documentation = ref<string>('')
+const showApiKeyError = ref(false)
 
 const hasDocumentation = computed(() => documentation.value.trim() !== '')
 const hasCode = computed(() => !!code)
+const hasValidApiKey = computed(() => hasApiKey() && apiKey.value.trim() !== '')
 
 const containsCode = computed(() => {
   return documentation.value.includes('```')
@@ -31,6 +34,12 @@ function sendDocsRequest() {
     return
   }
 
+  if (!hasValidApiKey.value) {
+    showApiKeyError.value = true
+
+    return
+  }
+
   const message = createGenerateDocsMessage(
     generateMessageId(),
     code.value,
@@ -40,6 +49,7 @@ function sendDocsRequest() {
   webSocketStore.sendMessage(message)
   messageSent.value = true
   isLoading.value = true
+  showApiKeyError.value = false
 }
 
 function handleMessage(message: ResponseMessage) {
@@ -49,10 +59,14 @@ function handleMessage(message: ResponseMessage) {
 
   if (message.type === MESSAGE_TYPES.response.ERROR && message.error_message) {
     isLoading.value = false
+    if (message.error_message === 'AI model or API key is invalid.') {
+      showApiKeyError.value = true
+    }
   }
   else if (message.type === MESSAGE_TYPES.response.RETURN_DOCS && message.docs) {
     documentation.value = message.docs
     isLoading.value = false
+    showApiKeyError.value = false
   }
 }
 
@@ -62,6 +76,7 @@ watch(generateDocumentation, (newValue) => {
   setGenerateDocumentation(newValue)
   if (newValue) {
     messageSent.value = false
+    showApiKeyError.value = false
     sendDocsRequest()
   }
 })
@@ -155,9 +170,40 @@ onUnmounted(() => {
 
     <!-- Enabled state -->
     <div v-else>
+      <!-- API Key Error -->
+      <v-alert
+        v-if="showApiKeyError"
+        type="warning"
+        variant="tonal"
+        class="mb-4"
+        closable
+        @click:close="showApiKeyError = false"
+      >
+        <div class="d-flex flex-column">
+          <div class="text-h6 mb-2">
+            API Key Required
+          </div>
+
+          <div class="text-body-2 mb-3">
+            Please enter a valid API key to generate documentation. Go to the API Key page to set up your credentials.
+          </div>
+
+          <div>
+            <v-btn
+              color="warning"
+              variant="outlined"
+              size="small"
+              to="/enter-api-key"
+            >
+              Enter API Key
+            </v-btn>
+          </div>
+        </div>
+      </v-alert>
+
       <!-- Waiting for code -->
       <v-alert
-        v-if="!hasCode"
+        v-else-if="!hasCode"
         type="info"
         variant="tonal"
         class="mb-4"

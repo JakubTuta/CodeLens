@@ -4,21 +4,30 @@ import { MESSAGE_TYPES } from '~/types/websocket'
 import { createGenerateImprovementsMessage, generateMessageId } from '~/utils/websocket-helpers'
 
 const webSocketStore = useWebSocketStore()
-const { getGenerateImprovements, setGenerateImprovements, getCode, getLanguage } = useCookieStore()
+const { getGenerateImprovements, setGenerateImprovements, getCode, getLanguage, getApiKey, hasApiKey } = useCookieStore()
 
 const generateImprovements = ref(getGenerateImprovements())
 const code = getCode()
 const language = getLanguage()
+const apiKey = getApiKey()
 
 const isLoading = ref(false)
 const messageSent = ref(false)
 const improvements = ref<string[]>([])
+const showApiKeyError = ref(false)
 
 const hasImprovements = computed(() => improvements.value.length > 0)
 const hasCode = computed(() => !!code)
+const hasValidApiKey = computed(() => hasApiKey() && apiKey.value.trim() !== '')
 
 function sendImprovementsRequest() {
   if (!generateImprovements.value || !code || !code.value.trim() || messageSent.value) {
+    return
+  }
+
+  if (!hasValidApiKey.value) {
+    showApiKeyError.value = true
+
     return
   }
 
@@ -31,6 +40,7 @@ function sendImprovementsRequest() {
   webSocketStore.sendMessage(message)
   messageSent.value = true
   isLoading.value = true
+  showApiKeyError.value = false
 }
 
 function handleMessage(message: ResponseMessage) {
@@ -40,10 +50,14 @@ function handleMessage(message: ResponseMessage) {
 
   if (message.type === MESSAGE_TYPES.response.ERROR && message.error_message) {
     isLoading.value = false
+    if (message.error_message === 'AI model or API key is invalid.') {
+      showApiKeyError.value = true
+    }
   }
   else if (message.type === MESSAGE_TYPES.response.RETURN_IMPROVEMENTS && message.improvements) {
     improvements.value = message.improvements
     isLoading.value = false
+    showApiKeyError.value = false
   }
 }
 
@@ -53,6 +67,7 @@ watch(generateImprovements, (newValue) => {
   setGenerateImprovements(newValue)
   if (newValue) {
     messageSent.value = false
+    showApiKeyError.value = false
     sendImprovementsRequest()
   }
 })
@@ -146,9 +161,40 @@ onUnmounted(() => {
 
     <!-- Enabled state -->
     <div v-else>
+      <!-- API Key Error -->
+      <v-alert
+        v-if="showApiKeyError"
+        type="warning"
+        variant="tonal"
+        class="mb-4"
+        closable
+        @click:close="showApiKeyError = false"
+      >
+        <div class="d-flex flex-column">
+          <div class="text-h6 mb-2">
+            API Key Required
+          </div>
+
+          <div class="text-body-2 mb-3">
+            Please enter a valid API key to generate improvements. Go to the API Key page to set up your credentials.
+          </div>
+
+          <div>
+            <v-btn
+              color="warning"
+              variant="outlined"
+              size="small"
+              to="/enter-api-key"
+            >
+              Enter API Key
+            </v-btn>
+          </div>
+        </div>
+      </v-alert>
+
       <!-- Waiting for code -->
       <v-alert
-        v-if="!hasCode"
+        v-else-if="!hasCode"
         type="info"
         variant="tonal"
         class="mb-4"
