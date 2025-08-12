@@ -3,9 +3,9 @@ import logging
 import typing
 
 import fastapi
-from api.websocket import responses
+from api import responses
 from models import websocket as models
-from services import test_generation, test_runner
+from tests import test_generation, test_runner
 from utils import websocket_utils as utils
 
 logger = logging.getLogger(__name__)

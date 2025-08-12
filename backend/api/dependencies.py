@@ -1,4 +1,4 @@
-from api.websocket.connection_manager import ConnectionManager
+from api.connection_manager import ConnectionManager
 
 manager = ConnectionManager()
 

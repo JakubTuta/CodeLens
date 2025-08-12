@@ -4,8 +4,8 @@ import logging
 import os
 
 import fastapi
-from api.websocket import connection_manager, dependencies, handlers
-from services import test_execution
+from api import connection_manager, dependencies, handlers
+from tests import test_execution
 from utils import websocket_utils as utils
 
 logging.basicConfig(level=logging.INFO)

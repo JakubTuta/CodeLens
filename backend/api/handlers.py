@@ -1,9 +1,9 @@
 import fastapi
 from ai import ai
-from api.websocket import responses, validation
+from api import responses, validation
 from services import documentation_generation as create_docs
 from services import improvement_generation as create_improvements
-from services import test_generation_service as test_generation
+from tests import test_generation_service as test_generation
 from utils import function_utils
 from utils import websocket_utils as utils
 

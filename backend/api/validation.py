@@ -2,7 +2,7 @@ import typing
 
 import fastapi
 from ai import ai
-from api.websocket import responses
+from api import responses
 from utils import function_utils
 from utils import websocket_utils as utils
 

@@ -2,7 +2,8 @@ import asyncio
 import typing
 
 from models import websocket as models
-from utils import function_utils, test_utils
+from tests import test_utils
+from utils import function_utils
 
 
 def create_test_title(test_name: str) -> str:

@@ -26,7 +26,7 @@ def create_app():
 app = create_app()
 
 
-@app.get("/")
+@app.head("/")
 async def root():
     return {"message": "Welcome to CodeLens API"}
 

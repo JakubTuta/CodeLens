@@ -1,7 +1,8 @@
 import typing
 from typing import List
 
-from helpers import ai, function_utils
+import ai.ai as ai
+import utils.function_utils as function_utils
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import PromptTemplate
 from pydantic import BaseModel, Field

@@ -1,10 +1,9 @@
 import logging
-from typing import List
 
 import fastapi
-from api.websocket import responses
+from api import responses
 from models import websocket as models
-from services import test_runner
+from tests import test_runner
 from utils import websocket_utils as utils
 
 logger = logging.getLogger(__name__)
@@ -92,4 +91,5 @@ async def handle_run_tests_message(websocket: fastapi.WebSocket, message: dict):
 
     except Exception as e:
         logger.error(f"Error handling run_tests_message: {e}")
+        await responses.send_test_execution_error(websocket, message.get("id", ""), e)
         await responses.send_test_execution_error(websocket, message.get("id", ""), e)
