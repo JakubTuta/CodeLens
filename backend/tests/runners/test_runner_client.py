@@ -10,7 +10,7 @@ import pydantic
 import websockets
 import websockets.exceptions
 
-TEST_RUNNER_URL = os.getenv("TEST_RUNNER_URL", "ws://localhost:8001/ws")
+TEST_RUNNER_URL = os.getenv("TEST_RUNNER_URL", "ws://codelens-test-runner:8001/ws")
 CONNECTION_TIMEOUT = 60
 EXECUTION_TIMEOUT = 300
 

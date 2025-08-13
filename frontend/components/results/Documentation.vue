@@ -75,7 +75,16 @@ watch(generateDocumentation, (newValue) => {
   if (newValue) {
     messageSent.value = false
     showApiKeyError.value = false
+
+    // Set loading state if conditions are met
+    if (hasCode.value && hasValidApiKey.value && !documentation.value) {
+      isLoading.value = true
+    }
+
     sendDocsRequest()
+  }
+  else {
+    isLoading.value = false
   }
 })
 
@@ -83,6 +92,10 @@ watch(
   () => webSocketStore.isConnected,
   (isConnected) => {
     if (isConnected) {
+      // Set loading state if conditions are met and we're about to send request
+      if (generateDocumentation.value && hasCode.value && hasValidApiKey.value && !documentation.value) {
+        isLoading.value = true
+      }
       sendDocsRequest()
     }
   },
@@ -91,6 +104,12 @@ watch(
 
 onMounted(() => {
   unregisterHandler = webSocketStore.onMessage(handleMessage)
+
+  // Initialize loading state if conditions are met
+  if (generateDocumentation.value && hasCode.value && hasValidApiKey.value && !documentation.value) {
+    isLoading.value = true
+  }
+
   if (generateDocumentation.value && hasCode.value) {
     sendDocsRequest()
   }
@@ -255,7 +274,7 @@ onUnmounted(() => {
         variant="tonal"
         class="mb-4"
       >
-        Documentation will be displayed here.
+        Ready to generate documentation when conditions are met.
       </v-alert>
     </div>
   </v-card>

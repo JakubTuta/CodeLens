@@ -66,7 +66,16 @@ watch(generateImprovements, (newValue) => {
   if (newValue) {
     messageSent.value = false
     showApiKeyError.value = false
+
+    // Set loading state if conditions are met
+    if (hasCode.value && hasValidApiKey.value && improvements.value.length === 0) {
+      isLoading.value = true
+    }
+
     sendImprovementsRequest()
+  }
+  else {
+    isLoading.value = false
   }
 })
 
@@ -74,6 +83,10 @@ watch(
   () => webSocketStore.isConnected,
   (isConnected) => {
     if (isConnected) {
+      // Set loading state if conditions are met and we're about to send request
+      if (generateImprovements.value && hasCode.value && hasValidApiKey.value && improvements.value.length === 0) {
+        isLoading.value = true
+      }
       sendImprovementsRequest()
     }
   },
@@ -82,6 +95,12 @@ watch(
 
 onMounted(() => {
   unregisterHandler = webSocketStore.onMessage(handleMessage)
+
+  // Initialize loading state if conditions are met
+  if (generateImprovements.value && hasCode.value && hasValidApiKey.value && improvements.value.length === 0) {
+    isLoading.value = true
+  }
+
   if (generateImprovements.value && hasCode.value) {
     sendImprovementsRequest()
   }
@@ -254,7 +273,7 @@ onUnmounted(() => {
         variant="tonal"
         class="mb-4"
       >
-        Improvement suggestions will be displayed here.
+        Ready to generate improvements when conditions are met.
       </v-alert>
     </div>
   </v-card>
