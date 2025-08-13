@@ -11,15 +11,16 @@ const code = getCode()
 const language = getLanguage()
 const apiKey = getApiKey()
 
-const isLoading = ref(false)
+const isLoading = ref(true)
 const messageSent = ref(false)
 const documentation = ref<string>('')
 const showApiKeyError = ref(false)
 
 const hasDocumentation = computed(() => documentation.value.trim() !== '')
-const hasCode = computed(() => !!code)
+const hasCode = computed(() => !!code && code.value.trim() !== '')
 const hasValidApiKey = computed(() => hasApiKey() && apiKey.value.trim() !== '')
-const shouldShowApiKeyAlert = computed(() => !hasValidApiKey.value && generateDocumentation.value)
+const shouldShowApiKeyAlert = computed(() => !hasValidApiKey.value)
+const shouldShowCodeAlert = computed(() => !hasCode.value)
 
 const containsCode = computed(() => {
   return documentation.value.includes('```')
@@ -75,16 +76,7 @@ watch(generateDocumentation, (newValue) => {
   if (newValue) {
     messageSent.value = false
     showApiKeyError.value = false
-
-    // Set loading state if conditions are met
-    if (hasCode.value && hasValidApiKey.value && !documentation.value) {
-      isLoading.value = true
-    }
-
     sendDocsRequest()
-  }
-  else {
-    isLoading.value = false
   }
 })
 
@@ -92,10 +84,6 @@ watch(
   () => webSocketStore.isConnected,
   (isConnected) => {
     if (isConnected) {
-      // Set loading state if conditions are met and we're about to send request
-      if (generateDocumentation.value && hasCode.value && hasValidApiKey.value && !documentation.value) {
-        isLoading.value = true
-      }
       sendDocsRequest()
     }
   },
@@ -104,13 +92,7 @@ watch(
 
 onMounted(() => {
   unregisterHandler = webSocketStore.onMessage(handleMessage)
-
-  // Initialize loading state if conditions are met
-  if (generateDocumentation.value && hasCode.value && hasValidApiKey.value && !documentation.value) {
-    isLoading.value = true
-  }
-
-  if (generateDocumentation.value && hasCode.value) {
+  if (generateDocumentation.value) {
     sendDocsRequest()
   }
 })
@@ -187,14 +169,12 @@ onUnmounted(() => {
 
     <!-- Enabled state -->
     <div v-else>
-      <!-- API Key Error -->
+      <!-- API Key Missing Alert (Priority 3) -->
       <v-alert
-        v-if="shouldShowApiKeyAlert || showApiKeyError"
+        v-if="shouldShowApiKeyAlert && !showApiKeyError"
         type="warning"
         variant="tonal"
         class="mb-4"
-        closable
-        @click:close="showApiKeyError = false"
       >
         <div class="d-flex flex-column">
           <div class="text-h6 mb-2">
@@ -218,9 +198,9 @@ onUnmounted(() => {
         </div>
       </v-alert>
 
-      <!-- Waiting for code -->
+      <!-- Code Missing Alert (Priority 4) -->
       <v-alert
-        v-else-if="!hasCode"
+        v-else-if="shouldShowCodeAlert"
         type="info"
         variant="tonal"
         class="mb-4"
@@ -228,24 +208,38 @@ onUnmounted(() => {
         Waiting for code...
       </v-alert>
 
-      <!-- Loading state -->
-      <div
-        v-else-if="isLoading"
-        class="text-center"
+      <!-- API Key Error Alert (Priority 5) -->
+      <v-alert
+        v-else-if="showApiKeyError"
+        type="error"
+        variant="tonal"
+        class="mb-4"
+        closable
+        @click:close="showApiKeyError = false"
       >
-        <v-progress-circular
-          indeterminate
-          color="secondary"
-          size="32"
-          class="mb-3"
-        />
+        <div class="d-flex flex-column">
+          <div class="text-h6 mb-2">
+            Invalid API Key
+          </div>
 
-        <p class="text-body-2 text-medium-emphasis">
-          Generating documentation...
-        </p>
-      </div>
+          <div class="text-body-2 mb-3">
+            The AI model or API key is invalid. Please check your API key and try again.
+          </div>
 
-      <!-- Documentation content -->
+          <div>
+            <v-btn
+              color="error"
+              variant="outlined"
+              size="small"
+              to="/enter-api-key"
+            >
+              Update API Key
+            </v-btn>
+          </div>
+        </div>
+      </v-alert>
+
+      <!-- Documentation Content (Priority 6) -->
       <div
         v-else-if="hasDocumentation"
         class="documentation-content"
@@ -267,15 +261,22 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- No documentation received yet -->
-      <v-alert
+      <!-- Loading State (Priority 2 - Default) -->
+      <div
         v-else
-        type="info"
-        variant="tonal"
-        class="mb-4"
+        class="text-center"
       >
-        Ready to generate documentation when conditions are met.
-      </v-alert>
+        <v-progress-circular
+          indeterminate
+          color="secondary"
+          size="32"
+          class="mb-3"
+        />
+
+        <p class="text-body-2 text-medium-emphasis">
+          Generating documentation...
+        </p>
+      </div>
     </div>
   </v-card>
 </template>
