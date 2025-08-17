@@ -196,13 +196,26 @@ if ($runningDeployments -eq $deployments.Count) {
 
 # Check if deployments exist but are paused
 $pausedDeployments = 0
+$missingNetworking = $false
+
 foreach ($deployment in $deployments) {
     if ($currentStatus.ContainsKey($deployment) -and $currentStatus[$deployment] -eq 0) {
         $pausedDeployments++
     }
 }
 
-if ($pausedDeployments -eq 0) {
+# Check if networking resources are missing (indicating they were removed during pause)
+$ingressExists = kubectl get ingress codelens-ingress 2>$null
+if ($LASTEXITCODE -ne 0) {
+    $missingNetworking = $true
+}
+
+$loadBalancerExists = kubectl get service codelens-frontend -o jsonpath='{.spec.type}' 2>$null
+if ($LASTEXITCODE -eq 0 -and $loadBalancerExists -ne "LoadBalancer") {
+    $missingNetworking = $true
+}
+
+if ($pausedDeployments -eq 0 -and -not $missingNetworking) {
     Write-Host "ERROR: No paused deployments found!" -ForegroundColor Red
     Write-Host ""
     Write-Host "Current status:" -ForegroundColor Yellow
@@ -221,9 +234,13 @@ if ($pausedDeployments -eq 0) {
 }
 
 Write-Host "Found $pausedDeployments paused deployment(s) to resume." -ForegroundColor Yellow
+if ($missingNetworking) {
+    Write-Host "Detected missing networking resources - will restore them." -ForegroundColor Yellow
+}
 Write-Host ""
-Write-Host "This will scale your deployments back to 1 replica each." -ForegroundColor Yellow
+Write-Host "This will scale your deployments back to 1 replica each and restore networking." -ForegroundColor Yellow
 Write-Host "Your application will start consuming resources and incurring costs again." -ForegroundColor Yellow
+Write-Host "SSL certificates will be re-provisioned (may take 5-10 minutes)." -ForegroundColor Yellow
 Write-Host ""
 
 $confirm = Read-Host "Continue with resume? (y/n)"
@@ -250,6 +267,57 @@ foreach ($deployment in $deployments) {
 }
 
 Write-Host ""
+Write-Host "Restoring networking resources..." -ForegroundColor Yellow
+
+# Restore frontend service to LoadBalancer type
+Write-Host "  Converting frontend service back to LoadBalancer..." -ForegroundColor Gray
+$frontendServiceExists = kubectl get service codelens-frontend 2>$null
+if ($LASTEXITCODE -eq 0) {
+    kubectl patch service codelens-frontend -p '{"spec":{"type":"LoadBalancer"}}' 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "    Frontend service converted to LoadBalancer" -ForegroundColor Green
+    } else {
+        Write-Host "    Warning: Failed to convert frontend service" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "    Warning: Frontend service not found" -ForegroundColor Yellow
+}
+
+# Restore ingress from original configuration or template
+Write-Host "  Restoring ingress..." -ForegroundColor Gray
+$ingressRestored = $false
+
+# Try to restore from backup first
+if (Test-Path "k8s/gcp/backups/ingress-backup.yaml") {
+    kubectl apply -f "k8s/gcp/backups/ingress-backup.yaml" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "    Ingress restored from backup" -ForegroundColor Green
+        $ingressRestored = $true
+    }
+}
+
+# If backup restore failed, use the original ingress.yaml file
+if (-not $ingressRestored -and (Test-Path "k8s/gcp/ingress.yaml")) {
+    kubectl apply -f "k8s/gcp/ingress.yaml" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "    Ingress restored from template" -ForegroundColor Green
+        $ingressRestored = $true
+    }
+}
+
+if (-not $ingressRestored) {
+    Write-Host "    Warning: Could not restore ingress - you may need to deploy it manually" -ForegroundColor Yellow
+    Write-Host "    Use: kubectl apply -f k8s/gcp/ingress.yaml" -ForegroundColor Gray
+}
+
+Write-Host ""
+Write-Host "Waiting for services to be ready..." -ForegroundColor Yellow
+Start-Sleep -Seconds 10
+
+Write-Host ""
+Write-Host "Waiting for services to be ready..." -ForegroundColor Yellow
+Start-Sleep -Seconds 10
+
 Write-Host "Waiting for pods to be ready..." -ForegroundColor Yellow
 kubectl wait --for=condition=available --timeout=300s deployment/codelens-backend 2>$null
 kubectl wait --for=condition=available --timeout=300s deployment/codelens-frontend 2>$null
@@ -260,12 +328,29 @@ Write-Host "Checking final status..." -ForegroundColor Yellow
 kubectl get deployments -l app=codelens
 
 Write-Host ""
+Write-Host "Checking networking status..." -ForegroundColor Yellow
+Write-Host "Services:" -ForegroundColor Gray
+kubectl get services -l app=codelens
+Write-Host ""
+Write-Host "Ingress:" -ForegroundColor Gray
+kubectl get ingress codelens-ingress 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  Warning: Ingress not found - application may not be accessible externally" -ForegroundColor Yellow
+}
+
+Write-Host ""
 Write-Host "================================" -ForegroundColor Green
 Write-Host "CodeLens Application RESUMED!" -ForegroundColor Green
 Write-Host "================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Your application is now running and accessible." -ForegroundColor White
-Write-Host "Note: It may take a few minutes for the ingress to route traffic properly." -ForegroundColor Yellow
+Write-Host "Note: It may take 5-10 minutes for:" -ForegroundColor Yellow
+Write-Host "- Load balancer to get external IP" -ForegroundColor Gray
+Write-Host "- SSL certificates to be provisioned" -ForegroundColor Gray
+Write-Host "- Ingress to route traffic properly" -ForegroundColor Gray
+Write-Host ""
+Write-Host "Check ingress status with:" -ForegroundColor Cyan
+Write-Host "  kubectl describe ingress codelens-ingress" -ForegroundColor White
 Write-Host ""
 Write-Host "To pause your application again:" -ForegroundColor Cyan
 Write-Host "  .\scripts\pause.ps1" -ForegroundColor White

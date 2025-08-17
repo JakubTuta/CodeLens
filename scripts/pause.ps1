@@ -177,31 +177,49 @@ Write-Host ""
 
 # Check if already paused
 $pausedDeployments = 0
+$hasNetworkingResources = $false
+
 foreach ($deployment in $deployments) {
     if ($currentStatus.ContainsKey($deployment) -and $currentStatus[$deployment] -eq 0) {
         $pausedDeployments++
     }
 }
 
-if ($pausedDeployments -eq $deployments.Count) {
-    Write-Host "All deployments are already paused (scaled to 0)!" -ForegroundColor Yellow
+# Check for active networking resources
+$ingressExists = kubectl get ingress codelens-ingress 2>$null
+if ($LASTEXITCODE -eq 0) {
+    $hasNetworkingResources = $true
+}
+
+$loadBalancerExists = kubectl get service codelens-frontend -o jsonpath='{.spec.type}' 2>$null
+if ($LASTEXITCODE -eq 0 -and $loadBalancerExists -eq "LoadBalancer") {
+    $hasNetworkingResources = $true
+}
+
+if ($pausedDeployments -eq $deployments.Count -and -not $hasNetworkingResources) {
+    Write-Host "All deployments and networking resources are already paused!" -ForegroundColor Yellow
     Write-Host ""
     foreach ($deployment in $deployments) {
         Write-Host "  $deployment`: 0 replicas" -ForegroundColor White
     }
+    Write-Host "  Ingress: Removed" -ForegroundColor White
+    Write-Host "  LoadBalancer: Removed" -ForegroundColor White
+    Write-Host "  SSL Certificate: Removed" -ForegroundColor White
     Write-Host ""
-    Write-Host "Your application is already saving costs." -ForegroundColor Green
+    Write-Host "Your application is already saving maximum costs." -ForegroundColor Green
     exit 0
 }
 
-Write-Host "This will scale your deployments to 0 replicas." -ForegroundColor Yellow
+Write-Host "This will scale your deployments to 0 replicas and remove networking resources." -ForegroundColor Yellow
 Write-Host "Benefits:" -ForegroundColor Green
 Write-Host "  - Stops all running pods (saves compute costs)" -ForegroundColor White
-Write-Host "  - Keeps all configuration intact" -ForegroundColor White
-Write-Host "  - Maintains ingress, services, and SSL certificates" -ForegroundColor White
-Write-Host "  - Can be easily resumed later" -ForegroundColor White
+Write-Host "  - Removes ingress/load balancer (saves networking costs)" -ForegroundColor White
+Write-Host "  - Removes SSL certificates (saves certificate costs)" -ForegroundColor White
+Write-Host "  - Keeps static IP reserved (minimal cost)" -ForegroundColor White
+Write-Host "  - Keeps all configuration backed up for easy restoration" -ForegroundColor White
 Write-Host ""
-Write-Host "Your application will be inaccessible until resumed." -ForegroundColor Red
+Write-Host "Your application will be completely inaccessible until resumed." -ForegroundColor Red
+Write-Host "The domain will not resolve and SSL certificates will be removed." -ForegroundColor Red
 Write-Host ""
 
 $confirm = Read-Host "Continue with pause? (y/n)"
@@ -241,6 +259,61 @@ if ($remainingPods) {
 }
 
 Write-Host ""
+Write-Host "Removing networking resources to save costs..." -ForegroundColor Yellow
+
+# Store original ingress configuration before deleting
+Write-Host "  Backing up ingress configuration..." -ForegroundColor Gray
+$ingressExists = kubectl get ingress codelens-ingress -o yaml 2>$null
+if ($LASTEXITCODE -eq 0) {
+    # Create backup directory if it doesn't exist
+    if (-not (Test-Path "k8s/gcp/backups")) {
+        New-Item -ItemType Directory -Path "k8s/gcp/backups" -Force | Out-Null
+    }
+    
+    kubectl get ingress codelens-ingress -o yaml > "k8s/gcp/backups/ingress-backup.yaml" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "    Ingress configuration backed up" -ForegroundColor Green
+    }
+}
+
+# Delete ingress (this removes the load balancer and saves networking costs)
+Write-Host "  Deleting ingress..." -ForegroundColor Gray
+kubectl delete ingress codelens-ingress 2>$null
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "    Ingress deleted successfully" -ForegroundColor Green
+} else {
+    Write-Host "    Ingress not found or already deleted" -ForegroundColor Gray
+}
+
+# Delete managed certificate (saves SSL certificate costs)
+Write-Host "  Deleting managed certificate..." -ForegroundColor Gray
+kubectl delete managedcertificate codelens-ssl-cert 2>$null
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "    Managed certificate deleted successfully" -ForegroundColor Green
+} else {
+    Write-Host "    Managed certificate not found or already deleted" -ForegroundColor Gray
+}
+
+# Change frontend service from LoadBalancer to ClusterIP to remove external IP costs
+Write-Host "  Converting frontend service to ClusterIP..." -ForegroundColor Gray
+$frontendServiceExists = kubectl get service codelens-frontend 2>$null
+if ($LASTEXITCODE -eq 0) {
+    # Patch the service to remove LoadBalancer type
+    kubectl patch service codelens-frontend -p '{"spec":{"type":"ClusterIP"}}' 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "    Frontend service converted to ClusterIP" -ForegroundColor Green
+    } else {
+        Write-Host "    Warning: Failed to convert frontend service" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "    Frontend service not found" -ForegroundColor Gray
+}
+
+Write-Host ""
+Write-Host "Waiting for networking resources to be cleaned up..." -ForegroundColor Yellow
+Start-Sleep -Seconds 15
+
+Write-Host ""
 Write-Host "Checking final status..." -ForegroundColor Yellow
 kubectl get deployments -l app=codelens
 
@@ -251,9 +324,10 @@ Write-Host "===============================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Cost savings:" -ForegroundColor Cyan
 Write-Host "- No compute costs for pods" -ForegroundColor White
-Write-Host "- Ingress and load balancer still active (minimal cost)" -ForegroundColor White
-Write-Host "- SSL certificates maintained" -ForegroundColor White
-Write-Host "- All configuration preserved" -ForegroundColor White
+Write-Host "- No networking costs (ingress/load balancer removed)" -ForegroundColor White
+Write-Host "- No SSL certificate costs" -ForegroundColor White
+Write-Host "- Static IP reserved but not in use (minimal cost)" -ForegroundColor White
+Write-Host "- All configuration preserved for easy restoration" -ForegroundColor White
 Write-Host ""
 Write-Host "To resume your application later:" -ForegroundColor Yellow
 Write-Host "  .\scripts\resume.ps1" -ForegroundColor White
