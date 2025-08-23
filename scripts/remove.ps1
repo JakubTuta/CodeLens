@@ -519,7 +519,7 @@ Write-Host "   You may want to update or remove these DNS records" -ForegroundCo
 Write-Host "2. The GKE cluster itself was not removed" -ForegroundColor White
 Write-Host "   If you want to remove the entire cluster, use: gcloud container clusters delete $CLUSTER_NAME --region $REGION" -ForegroundColor Gray
 Write-Host "3. Static IP reservations may still exist in GCP Console" -ForegroundColor White
-Write-Host "   Check: GCP Console → VPC Network → External IP addresses" -ForegroundColor Gray
+Write-Host "   Check: GCP Console -> VPC Network -> External IP addresses" -ForegroundColor Gray
 Write-Host ""
 Write-Host "Your CodeLens application has been successfully removed from GCP!" -ForegroundColor Green
 Write-Host ""
