@@ -165,7 +165,7 @@ Write-Host "Checking prerequisites..." -ForegroundColor Yellow
 
 # Check kubectl
 try {
-    kubectl version --client --short | Out-Null
+    kubectl version --client | Out-Null
     if ($LASTEXITCODE -ne 0) {
         throw "kubectl not working"
     }

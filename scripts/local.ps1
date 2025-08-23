@@ -338,7 +338,7 @@ try {
 
 # Check kubectl
 try {
-    kubectl version --client --short | Out-Null
+    kubectl version --client | Out-Null
     Write-Host "[OK] kubectl is available" -ForegroundColor Green
 } catch {
     Write-Host "[ERROR] kubectl not found. Please enable Kubernetes in Docker Desktop." -ForegroundColor Red
