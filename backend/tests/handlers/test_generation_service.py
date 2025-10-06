@@ -7,6 +7,7 @@ import fastapi
 import models.websocket
 import tests.generators.performance
 import tests.generators.unit_test
+import tests.runners.test_runner_client
 import utils.websocket_utils
 
 logger = logging.getLogger(__name__)
@@ -45,19 +46,19 @@ class TestGeneratorManager:
         """Generate and execute tests of a specific type with streaming results."""
         try:
             generator = self.generators[test_type]
-            tests = await generator.get_tests_async(valid_function, code)
+            generated_tests = await generator.get_tests_async(valid_function, code)
 
-            logger.info(f"Generated {len(tests)} {test_type} tests")
+            logger.info(f"Generated {len(generated_tests)} {test_type} tests")
 
             # Set initial status to pending
-            for test in tests:
+            for test in generated_tests:
                 test.status = "pending"
 
             # Send tests with pending status
             response_message = utils.websocket_utils.prepare_response_message(
                 message_type=self.response_types[test_type],
                 message_id=message_id,
-                **{f"{test_type}_tests": tests},
+                **{f"{test_type}_tests": generated_tests},
             )
             await utils.websocket_utils.send_response_message(
                 websocket, response_message
@@ -67,7 +68,7 @@ class TestGeneratorManager:
             # Create callback for handling individual test results
             def handle_test_result_sync(test_id: str, result):
                 completed_test = None
-                for test in tests:
+                for test in generated_tests:
                     if test.id == test_id:
                         completed_test = test
                         break
@@ -108,13 +109,13 @@ class TestGeneratorManager:
                     send_update_in_background()
 
             # Update status to running
-            for test in tests:
+            for test in generated_tests:
                 test.status = "running"
 
             response_message = utils.websocket_utils.prepare_response_message(
                 message_type=self.response_types[test_type],
                 message_id=message_id,
-                **{f"{test_type}_tests": tests},
+                **{f"{test_type}_tests": generated_tests},
             )
             await utils.websocket_utils.send_response_message(
                 websocket, response_message
@@ -123,7 +124,7 @@ class TestGeneratorManager:
 
             # Execute tests with streaming results
             await tests.runners.test_runner_client.test_runner_client.execute_tests_streaming(
-                tests, handle_test_result_sync
+                generated_tests, handle_test_result_sync
             )
 
             logger.info(f"Completed streaming execution for {test_type} tests")
@@ -169,15 +170,15 @@ class TestGeneratorManager:
         async def generate_single_test_type(test_type: str):
             try:
                 generator = self.generators[test_type]
-                tests = await generator.get_tests_async(valid_function, code)
+                generated_tests = await generator.get_tests_async(valid_function, code)
 
-                for test in tests:
+                for test in generated_tests:
                     test.status = "pending"
 
                 response_message = utils.websocket_utils.prepare_response_message(
                     message_type=self.response_types[test_type],
                     message_id=message_id,
-                    **{f"{test_type}_tests": tests},
+                    **{f"{test_type}_tests": generated_tests},
                 )
                 await utils.websocket_utils.send_response_message(
                     websocket, response_message
