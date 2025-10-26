@@ -6,7 +6,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NUXT_PUBLIC_WEBSOCKET_SERVER_URL=${WEBSOCKET_SERVER_URL:-ws://localhost:8002}
+      - NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL:-http://localhost:8000}
+      - NUXT_PUBLIC_WEBSOCKET_SERVER_URL=${NUXT_PUBLIC_WEBSOCKET_SERVER_URL:-ws://localhost:8000}
     depends_on:
       - backend
     networks:
@@ -18,12 +19,12 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8002:8002"
+      - "8000:8000"
     environment:
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
       - WEBSOCKET_PING_INTERVAL=${WEBSOCKET_PING_INTERVAL:-30}
-      - TEST_RUNNER_URL=${TEST_RUNNER_URL:-ws://test-runner:8001}
-      - PORT=8002
+      - WEBSOCKET_TIMEOUT=${WEBSOCKET_TIMEOUT:-3600}
+      - TEST_RUNNER_URL=${TEST_RUNNER_URL:-ws://test-runner:8001/ws}
     depends_on:
       - test-runner
     networks:
@@ -36,11 +37,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8001:8001"
-    environment:
-      - KUBERNETES_NAMESPACE=${KUBERNETES_NAMESPACE:-default}
-    volumes:
-      # Mount kubeconfig for Kubernetes access (Docker Desktop)
-      - ${KUBECONFIG_PATH:-~/.kube/config}:/root/.kube/config:ro
     networks:
       - codelens-network
     restart: unless-stopped
