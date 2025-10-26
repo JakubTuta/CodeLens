@@ -148,3 +148,6 @@ schema.png
 k8s/gcp/*.yaml
 !k8s/gcp/*.template.yaml
 k8s/gcp/backups/
+
+CLAUDE.md
+.claude/
