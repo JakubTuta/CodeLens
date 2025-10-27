@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import uuid
 from typing import List, Optional
 
@@ -10,7 +11,7 @@ import uvicorn
 from docker.errors import APIError, ContainerError, ImageNotFound
 from fastapi.middleware.cors import CORSMiddleware
 
-CONTAINER_IMAGE = "codelens-test-executor:latest"
+CONTAINER_IMAGE = os.getenv("TEST_EXECUTOR_IMAGE", "codelens-test-executor:latest")
 CPU_LIMIT = int(0.5 * 1e9)
 MEMORY_LIMIT = "512m"
 CONTAINER_TIMEOUT_SECONDS = 120

@@ -44,6 +44,7 @@ services:
       - "127.0.0.1:8004:8004"
     environment:
       - PORT=8004
+      - TEST_EXECUTOR_IMAGE=codelens-test-executor:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
