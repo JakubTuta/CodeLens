@@ -4,8 +4,8 @@ from typing import List
 import ai.ai as ai
 import pydantic
 import utils.function_utils as function_utils
-from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts import PromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import PromptTemplate
 
 
 class ImprovementsList(pydantic.BaseModel):
@@ -79,5 +79,7 @@ class Improvements:
                 improvements_list = ImprovementsList.model_validate_json(response_text)
                 return improvements_list.improvements
             except Exception:
+                return []
+                return []
                 return []
                 return []

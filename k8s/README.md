@@ -91,7 +91,6 @@ kubectl delete -f k8s/gcp/
 - Test Runner URL: `ws://codelens-test-runner:8001/ws`
 
 ### Backend Environment Variables
-- **CORS_ORIGINS**: Comma-separated list of allowed CORS origins
 - **TEST_RUNNER_URL**: WebSocket URL for the test runner service
   - Local: `ws://codelens-test-runner:8001/ws` (internal service name)
   - Production: `ws://codelens-test-runner:8001/ws` (internal service name)

@@ -23,11 +23,6 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
-          env:
-            - name: CORS_ORIGINS
-              value: "http://codelens-frontend:3000,http://localhost:3000"
-            - name: TEST_RUNNER_URL
-              value: "ws://codelens-test-runner:8001/ws"
 ---
 apiVersion: v1
 kind: Service

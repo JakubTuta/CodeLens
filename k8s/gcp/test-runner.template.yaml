@@ -20,10 +20,13 @@ spec:
       serviceAccountName: test-runner-sa
       containers:
         - name: test-runner
-          image: {{REGISTRY}}/codelens-test-runner:latest
+          image: {{REGISTRY}}/codelens-test-runner:kubernetes
           imagePullPolicy: Always
           ports:
             - containerPort: 8001
+          env:
+            - name: TEST_EXECUTOR_IMAGE
+              value: {{REGISTRY}}/codelens-k8s-test-executor:latest
           resources:
             requests:
               memory: "128Mi"

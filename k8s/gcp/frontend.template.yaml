@@ -23,11 +23,6 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
-          env:
-            - name: NUXT_PUBLIC_API_URL
-              value: "https://api.{{DOMAIN}}"
-            - name: NUXT_PUBLIC_WEBSOCKET_SERVER_URL
-              value: "wss://api.{{DOMAIN}}"
           resources:
             requests:
               memory: "64Mi"

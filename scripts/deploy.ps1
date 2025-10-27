@@ -184,9 +184,16 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Building test runner..." -ForegroundColor Yellow
-docker build -t codelens-test-runner:latest ./test-runner
+docker build -t codelens-test-runner:kubernetes ./test-runner
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Test runner build failed" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Building Kubernetes test executor..." -ForegroundColor Yellow
+docker build -f ./test-runner/test-executor.Dockerfile -t codelens-k8s-test-executor:latest ./test-runner
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[ERROR] Kubernetes test executor build failed" -ForegroundColor Red
     exit 1
 }
 
@@ -197,7 +204,8 @@ Write-Host "Tagging and pushing images..." -ForegroundColor Green
 $images = @(
     @{Local="codelens-frontend:latest"; Remote="$REGISTRY/codelens-frontend:latest"},
     @{Local="codelens-backend:latest"; Remote="$REGISTRY/codelens-backend:latest"},
-    @{Local="codelens-test-runner:latest"; Remote="$REGISTRY/codelens-test-runner:latest"}
+    @{Local="codelens-test-runner:kubernetes"; Remote="$REGISTRY/codelens-test-runner:kubernetes"},
+    @{Local="codelens-k8s-test-executor:latest"; Remote="$REGISTRY/codelens-k8s-test-executor:latest"}
 )
 
 foreach ($image in $images) {

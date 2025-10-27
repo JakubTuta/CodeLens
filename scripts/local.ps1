@@ -371,7 +371,7 @@ Write-Host ""
 Write-Host "Checking Docker images..." -ForegroundColor Yellow
 $missingImages = @()
 
-$images = @("codelens-frontend:latest", "codelens-backend:latest", "codelens-test-runner:latest")
+$images = @("codelens-frontend:latest", "codelens-backend:latest", "codelens-test-runner:kubernetes")
 foreach ($image in $images) {
     if (!(docker images -q $image 2>$null)) {
         $missingImages += $image

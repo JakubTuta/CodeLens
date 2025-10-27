@@ -20,7 +20,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
 
     try {
       const config = useRuntimeConfig()
-      const baseUrl = config.public.websocketServerUrl || 'ws://localhost:8000'
+      const baseUrl = config.public.websocketServerUrl
       const url = baseUrl.endsWith('/')
         ? `${baseUrl}ws`
         : `${baseUrl}/ws`

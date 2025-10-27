@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+websockets>=11.0
+docker
+pydantic
+python-json-logger

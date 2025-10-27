@@ -11,7 +11,7 @@ const messageHandlers = ref<((data: ResponseMessage) => void)[]>([])
 
 export function useWebSocket() {
   const config = useRuntimeConfig()
-  const baseUrl = config.public.websocketServerUrl || 'ws://localhost:8000'
+  const baseUrl = config.public.websocketServerUrl
   const url = baseUrl.endsWith('/')
     ? `${baseUrl}ws`
     : `${baseUrl}/ws`

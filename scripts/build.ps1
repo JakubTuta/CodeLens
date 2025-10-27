@@ -56,13 +56,23 @@ Write-Host "Backend built successfully" -ForegroundColor Green
 
 # Build Test Runner
 Write-Host "Building test runner..." -ForegroundColor Cyan
-Remove-ExistingImage "codelens-test-runner:latest"
-docker build -t codelens-test-runner:latest ./test-runner
+Remove-ExistingImage "codelens-test-runner:kubernetes"
+docker build -t codelens-test-runner:kubernetes ./test-runner
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Test runner build failed" -ForegroundColor Red
     exit 1
 }
 Write-Host "Test runner built successfully" -ForegroundColor Green
+
+# Build Kubernetes Test Executor (optimized base image)
+Write-Host "Building Kubernetes test executor..." -ForegroundColor Cyan
+Remove-ExistingImage "codelens-k8s-test-executor:latest"
+docker build -f ./test-runner/test-executor.Dockerfile -t codelens-k8s-test-executor:latest ./test-runner
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Kubernetes test executor build failed" -ForegroundColor Red
+    exit 1
+}
+Write-Host "Kubernetes test executor built successfully" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "All images built successfully!" -ForegroundColor Green

@@ -20,10 +20,13 @@ spec:
       serviceAccountName: test-runner-sa
       containers:
         - name: test-runner
-          image: codelens-test-runner:latest
+          image: codelens-test-runner:kubernetes
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8001
+          env:
+            - name: TEST_EXECUTOR_IMAGE
+              value: codelens-k8s-test-executor:latest
 ---
 apiVersion: v1
 kind: Service

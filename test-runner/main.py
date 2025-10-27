@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 import uuid
 from typing import List, Optional
 
@@ -14,7 +15,9 @@ from kubernetes.client.rest import ApiException
 KUBERNETES_NAMESPACE = "default"
 JOB_TTL_SECONDS = 300
 JOB_TIMEOUT_SECONDS = 120
-CONTAINER_IMAGE = "python:3.11-slim"
+# Use environment variable for test executor image, default to local image
+CONTAINER_IMAGE = os.getenv("TEST_EXECUTOR_IMAGE", "codelens-k8s-test-executor:latest")
+FALLBACK_IMAGE = "python:3.12.9-alpine"
 CPU_LIMIT = "500m"
 MEMORY_LIMIT = "512Mi"
 CPU_REQUEST = "100m"
@@ -180,17 +183,24 @@ class KubernetesTestRunner:
     async def _create_test_job(self, job_name: str, test_type: str) -> client.V1Job:
         """Create a Kubernetes Job to run the test"""
 
-        if test_type in ["unit", "memory", "performance"]:
+        # Using optimized image with pre-installed packages
+        if "codelens-k8s-test-executor" in CONTAINER_IMAGE:
             image = CONTAINER_IMAGE
-            command = [
-                "sh",
-                "-c",
-                "pip install hypothesis pytest memory-profiler psutil && "
-                "cd /test && python test_code.py",
-            ]
-        else:
-            image = CONTAINER_IMAGE
+            # Packages already installed, just run the test
             command = ["sh", "-c", "cd /test && python test_code.py"]
+        else:
+            # Fallback to base Python image with runtime package installation
+            if test_type in ["unit", "memory", "performance"]:
+                image = FALLBACK_IMAGE
+                command = [
+                    "sh",
+                    "-c",
+                    "pip install --quiet hypothesis pytest memory-profiler psutil && "
+                    "cd /test && python test_code.py",
+                ]
+            else:
+                image = FALLBACK_IMAGE
+                command = ["sh", "-c", "cd /test && python test_code.py"]
 
         job = client.V1Job(
             metadata=client.V1ObjectMeta(name=job_name, namespace=self.namespace),

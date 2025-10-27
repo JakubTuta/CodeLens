@@ -3,11 +3,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    image: codelens-frontend:latest
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
-      - NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL:-http://localhost:8000}
-      - NUXT_PUBLIC_WEBSOCKET_SERVER_URL=${NUXT_PUBLIC_WEBSOCKET_SERVER_URL:-ws://localhost:8000}
+      - PORT=3000
+      - NUXT_PUBLIC_API_URL=http://localhost:8003
+      - NUXT_PUBLIC_WEBSOCKET_SERVER_URL=ws://localhost:8003
     depends_on:
       - backend
     networks:
@@ -18,13 +20,15 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: codelens-backend:latest
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8003:8003"
     environment:
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
-      - WEBSOCKET_PING_INTERVAL=${WEBSOCKET_PING_INTERVAL:-30}
-      - WEBSOCKET_TIMEOUT=${WEBSOCKET_TIMEOUT:-3600}
-      - TEST_RUNNER_URL=${TEST_RUNNER_URL:-ws://test-runner:8001/ws}
+      - PORT=8003
+      - CORS_ORIGINS=http://localhost:3000
+      - WEBSOCKET_PING_INTERVAL=30
+      - WEBSOCKET_TIMEOUT=3600
+      - TEST_RUNNER_URL=ws://test-runner:8004/ws
     depends_on:
       - test-runner
     networks:
@@ -33,13 +37,30 @@ services:
 
   test-runner:
     build:
-      context: ./test-runner
+      context: ./test-runner-docker
       dockerfile: Dockerfile
+    image: codelens-test-runner:docker
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8004:8004"
+    environment:
+      - PORT=8004
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      test-executor:
+        condition: service_completed_successfully
     networks:
       - codelens-network
     restart: unless-stopped
+
+  # Build test executor image (used by test-runner to execute tests)
+  test-executor:
+    build:
+      context: ./test-runner-docker
+      dockerfile: test-executor.Dockerfile
+    image: codelens-test-executor:latest
+    command: echo "Test executor image built successfully"
+    restart: "no"
 
 networks:
   codelens-network:
